@@ -1,8 +1,9 @@
 ---
-description: ドキュメントファイルを新規に作成する場合
-globs: 
+description: md ファイルを新規に作成する場合
+globs: .md
 ---
 ## 作成場所
 
  - 全て `documents` 以下に作成する
+   - ただし README.md は除外
  - 子ディレクトリに関しては必要に応じて作成すること
