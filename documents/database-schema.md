@@ -83,7 +83,6 @@
 - event_source_id
 - start_date
 - embedding_vector USING ivfflat (vector_cosine_ops)
-- (category, interaction_type, created_at) WHERE interaction_type = 'like'
 
 ### saved_events
 

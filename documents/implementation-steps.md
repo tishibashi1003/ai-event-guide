@@ -214,10 +214,19 @@ export class GeminiService {
   async updatePreferenceVector(
     currentVector: number[], // 現在のユーザーの好みベクトル
     eventVector: number[], // スワイプしたイベントのベクトル
-    action: 'like' | 'dislike' // スワイプの方向
+    action: 'like' | 'dislike' | 'save' // スワイプの方向
   ): Promise<number[]> {
-    // likeの場合は強く（0.1）、dislikeの場合は弱く（-0.05）更新
-    const weight = action === 'like' ? 0.1 : -0.05;
+    // 重み付け係数の設定
+    const weight = (() => {
+      switch (action) {
+        case 'save':
+          return 0.3; // 「ココいく！」は強い正の影響
+        case 'like':
+          return 0.2; // 「いいね」は中程度の正の影響
+        case 'dislike':
+          return -0.1; // 「スキップ」は弱い負の影響
+      }
+    })();
     return currentVector.map((val, i) => {
       const newVal = val + eventVector[i] * weight;
       return Math.max(-1, Math.min(1, newVal)); // 値を-1から1の範囲に収める
@@ -385,7 +394,8 @@ type Event {
   id: ID!
   title: String!
   description: String!
-  event_date: DateTime!
+  start_date: DateTime!
+  end_date: DateTime!
   location_name: String!
   latitude: Float!
   longitude: Float!
@@ -399,7 +409,8 @@ type Event {
 input EventInput {
   title: String!
   description: String!
-  event_date: DateTime!
+  start_date: DateTime!
+  end_date: DateTime!
   location_name: String!
   latitude: Float!
   longitude: Float!
