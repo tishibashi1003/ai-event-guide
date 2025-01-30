@@ -6,9 +6,9 @@ import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
 import { customEvents, weekendEvents } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
 
-interface SwipeScreenProps {}
+interface SearchContainerProps {}
 
-export default function SwipeScreen({}: SwipeScreenProps) {
+export default function SearchContainer({}: SearchContainerProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<
     'right' | 'left' | 'up' | 'down' | null
