@@ -77,165 +77,7 @@ yarn add react-swipeable react-map-gl
 
 ## 2. バックエンド実装
 
-### 2.1 データベーススキーマ設定
-
-```sql
--- ユーザーテーブル
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_uid VARCHAR(128),
-  display_name VARCHAR(100),
-  email VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login TIMESTAMP
-);
-
--- スワイプしたイベントテーブル
-CREATE TABLE swiped_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_source_id VARCHAR(255),
-  user_id UUID,
-  title VARCHAR(255),
-  description TEXT,
-  start_date TIMESTAMP,
-  end_date TIMESTAMP,
-  address VARCHAR(255),
-  travel_time_car INTEGER,
-  image_url VARCHAR(255),
-  category VARCHAR(50),
-  target_age VARCHAR(50),
-  price_range VARCHAR(50),
-  embedding_vector vector(1536),
-  interaction_type VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- 保存済みイベントテーブル
-CREATE TABLE saved_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  event_id UUID,
-  save_type VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (event_id) REFERENCES swiped_events(id)
-);
-
--- ユーザー設定テーブル
-CREATE TABLE user_preferences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  preferred_categories TEXT[],
-  postal_code VARCHAR(8),
-  prefecture VARCHAR(20),
-  city VARCHAR(50),
-  price_preference VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- ユーザーの好みベクトルテーブル
-CREATE TABLE user_preference_vectors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  preference_vector vector(1536),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- インデックスの作成
-CREATE UNIQUE INDEX users_firebase_uid_idx ON users(firebase_uid);
-CREATE UNIQUE INDEX users_email_idx ON users(email);
-CREATE INDEX swiped_events_user_id_idx ON swiped_events(user_id);
-CREATE INDEX swiped_events_event_source_id_idx ON swiped_events(event_source_id);
-CREATE INDEX swiped_events_start_date_idx ON swiped_events(start_date);
-CREATE INDEX saved_events_user_event_idx ON saved_events(user_id, event_id);
-CREATE INDEX saved_events_save_type_idx ON saved_events(save_type);
-CREATE UNIQUE INDEX user_preference_vectors_user_id_idx ON user_preference_vectors(user_id);
-
--- ベクトル検索用インデックス（初期設定）
-CREATE INDEX swiped_events_embedding_vector_idx ON swiped_events
-USING ivfflat (embedding_vector vector_cosine_ops)
-WITH (lists = 100);
-
-CREATE INDEX user_preference_vectors_vector_idx ON user_preference_vectors
-USING ivfflat (preference_vector vector_cosine_ops)
-WITH (lists = 100);
-```
-
-### 2.2 AI 実装（Gemini API）
-
-```typescript
-// src/lib/ai/gemini.ts
-import { VertexAI } from '@google-cloud/aiplatform';
-
-export class GeminiService {
-  private vertexAi: VertexAI;
-  private modelName = 'gemini-pro';
-
-  constructor() {
-    this.vertexAi = new VertexAI({
-      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-      location: 'us-central1',
-    });
-  }
-
-  // イベントテキストからベクトル埋め込みを生成
-  async generateEmbedding(text: string): Promise<number[]> {
-    const model = this.vertexAi.preview.getModel(this.modelName);
-    const result = await model.embedText(text);
-    return result.embeddings[0].values; // 1536次元のベクトルを返す
-  }
-
-  // イベントの特徴抽出
-  async extractEventFeatures(description: string) {
-    const prompt = `
-      以下のイベント説明から特徴を抽出してください：
-      - ジャンル（アウトドア、文化、スポーツなど）
-      - 対象年齢層
-      - 雰囲気（にぎやか、静か、など）
-      - 予算帯
-
-      イベント説明：
-      ${description}
-    `;
-
-    const model = this.vertexAi.preview.getModel(this.modelName);
-    const result = await model.generateText(prompt);
-    return result.predictions[0];
-  }
-
-  // ユーザーの好みベクトル更新
-  async updatePreferenceVector(
-    currentVector: number[], // 現在のユーザーの好みベクトル
-    eventVector: number[], // スワイプしたイベントのベクトル
-    action: 'like' | 'dislike' | 'save' // スワイプの方向
-  ): Promise<number[]> {
-    // 重み付け係数の設定
-    const weight = (() => {
-      switch (action) {
-        case 'save':
-          return 0.3; // 「ココいく！」は強い正の影響
-        case 'like':
-          return 0.2; // 「いいね」は中程度の正の影響
-        case 'dislike':
-          return -0.1; // 「スキップ」は弱い負の影響
-      }
-    })();
-    return currentVector.map((val, i) => {
-      const newVal = val + eventVector[i] * weight;
-      return Math.max(-1, Math.min(1, newVal)); // 値を-1から1の範囲に収める
-    });
-  }
-}
-```
-
-### 2.3 イベント情報収集システム（Vertex AI Studio & Genkit）
+### 2.1 イベント情報収集システム（Vertex AI Studio & Genkit）
 
 ```typescript
 // src/lib/ai/eventCollector.ts
@@ -347,7 +189,7 @@ export class EventCollector {
 }
 ```
 
-### 2.4 Firebase Data Connect の設定
+### 2.2 Firebase Data Connect の設定
 
 1. Cloud SQL for PostgreSQL のセットアップ
 
@@ -434,7 +276,165 @@ type Mutation {
 }
 ```
 
-### 2.4 ユーザー好みベクトル管理
+### 2.3 データベーススキーマ設定
+
+```sql
+-- ユーザーテーブル
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  firebase_uid VARCHAR(128),
+  display_name VARCHAR(100),
+  email VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  last_login TIMESTAMP
+);
+
+-- スワイプしたイベントテーブル
+CREATE TABLE swiped_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_source_id VARCHAR(255),
+  user_id UUID,
+  title VARCHAR(255),
+  description TEXT,
+  start_date TIMESTAMP,
+  end_date TIMESTAMP,
+  address VARCHAR(255),
+  travel_time_car INTEGER,
+  image_url VARCHAR(255),
+  category VARCHAR(50),
+  target_age VARCHAR(50),
+  price_range VARCHAR(50),
+  embedding_vector vector(1536),
+  interaction_type VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- 保存済みイベントテーブル
+CREATE TABLE saved_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  event_id UUID,
+  save_type VARCHAR(20),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id),
+  FOREIGN KEY (event_id) REFERENCES swiped_events(id)
+);
+
+-- ユーザー設定テーブル
+CREATE TABLE user_preferences (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  preferred_categories TEXT[],
+  postal_code VARCHAR(8),
+  prefecture VARCHAR(20),
+  city VARCHAR(50),
+  price_preference VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- ユーザーの好みベクトルテーブル
+CREATE TABLE user_preference_vectors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID,
+  preference_vector vector(1536),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- インデックスの作成
+CREATE UNIQUE INDEX users_firebase_uid_idx ON users(firebase_uid);
+CREATE UNIQUE INDEX users_email_idx ON users(email);
+CREATE INDEX swiped_events_user_id_idx ON swiped_events(user_id);
+CREATE INDEX swiped_events_event_source_id_idx ON swiped_events(event_source_id);
+CREATE INDEX swiped_events_start_date_idx ON swiped_events(start_date);
+CREATE INDEX saved_events_user_event_idx ON saved_events(user_id, event_id);
+CREATE INDEX saved_events_save_type_idx ON saved_events(save_type);
+CREATE UNIQUE INDEX user_preference_vectors_user_id_idx ON user_preference_vectors(user_id);
+
+-- ベクトル検索用インデックス（初期設定）
+CREATE INDEX swiped_events_embedding_vector_idx ON swiped_events
+USING ivfflat (embedding_vector vector_cosine_ops)
+WITH (lists = 100);
+
+CREATE INDEX user_preference_vectors_vector_idx ON user_preference_vectors
+USING ivfflat (preference_vector vector_cosine_ops)
+WITH (lists = 100);
+```
+
+### 2.4 AI 実装（Gemini API）
+
+```typescript
+// src/lib/ai/gemini.ts
+import { VertexAI } from '@google-cloud/aiplatform';
+
+export class GeminiService {
+  private vertexAi: VertexAI;
+  private modelName = 'gemini-pro';
+
+  constructor() {
+    this.vertexAi = new VertexAI({
+      projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+      location: 'us-central1',
+    });
+  }
+
+  // イベントテキストからベクトル埋め込みを生成
+  async generateEmbedding(text: string): Promise<number[]> {
+    const model = this.vertexAi.preview.getModel(this.modelName);
+    const result = await model.embedText(text);
+    return result.embeddings[0].values; // 1536次元のベクトルを返す
+  }
+
+  // イベントの特徴抽出
+  async extractEventFeatures(description: string) {
+    const prompt = `
+      以下のイベント説明から特徴を抽出してください：
+      - ジャンル（アウトドア、文化、スポーツなど）
+      - 対象年齢層
+      - 雰囲気（にぎやか、静か、など）
+      - 予算帯
+
+      イベント説明：
+      ${description}
+    `;
+
+    const model = this.vertexAi.preview.getModel(this.modelName);
+    const result = await model.generateText(prompt);
+    return result.predictions[0];
+  }
+
+  // ユーザーの好みベクトル更新
+  async updatePreferenceVector(
+    currentVector: number[], // 現在のユーザーの好みベクトル
+    eventVector: number[], // スワイプしたイベントのベクトル
+    action: 'like' | 'dislike' | 'save' // スワイプの方向
+  ): Promise<number[]> {
+    // 重み付け係数の設定
+    const weight = (() => {
+      switch (action) {
+        case 'save':
+          return 0.3; // 「ココいく！」は強い正の影響
+        case 'like':
+          return 0.2; // 「いいね」は中程度の正の影響
+        case 'dislike':
+          return -0.1; // 「スキップ」は弱い負の影響
+      }
+    })();
+    return currentVector.map((val, i) => {
+      const newVal = val + eventVector[i] * weight;
+      return Math.max(-1, Math.min(1, newVal)); // 値を-1から1の範囲に収める
+    });
+  }
+}
+```
+
+### 2.5 ユーザー好みベクトル管理
 
 ```typescript
 // src/lib/preferences/vectorManager.ts
