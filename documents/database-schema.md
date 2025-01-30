@@ -124,3 +124,136 @@
     - swiped_events テーブルの interaction_type（like/dislike/save）を基に算出
     - 直近 30 日間のユーザーの行動履歴から重み付けを計算
     - カテゴリごとの重みはレコメンデーションエンジンで使用
+
+## Row Level Security (RLS) 設定
+
+### 1. RLS の有効化
+
+```sql
+-- 全テーブルでRLSを有効化
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE swiped_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_preference_vectors ENABLE ROW LEVEL SECURITY;
+```
+
+### 2. ポリシーの設定
+
+```sql
+-- usersテーブルのポリシー
+CREATE POLICY users_self_access ON users
+  FOR ALL
+  USING (firebase_uid = current_user);
+
+-- swiped_eventsテーブルのポリシー
+CREATE POLICY swiped_events_self_access ON swiped_events
+  FOR SELECT
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+CREATE POLICY swiped_events_self_insert ON swiped_events
+  FOR INSERT
+  WITH CHECK (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+CREATE POLICY swiped_events_self_update ON swiped_events
+  FOR UPDATE
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+-- saved_eventsテーブルのポリシー
+CREATE POLICY saved_events_self_access ON saved_events
+  FOR SELECT
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+CREATE POLICY saved_events_self_insert ON saved_events
+  FOR INSERT
+  WITH CHECK (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+CREATE POLICY saved_events_self_delete ON saved_events
+  FOR DELETE
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+-- user_preference_vectorsテーブルのポリシー
+CREATE POLICY vectors_self_access ON user_preference_vectors
+  FOR SELECT
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+
+CREATE POLICY vectors_self_update ON user_preference_vectors
+  FOR UPDATE
+  USING (user_id IN (
+    SELECT id FROM users
+    WHERE firebase_uid = current_user
+  ));
+```
+
+### 3. 管理者アクセス用ポリシー
+
+```sql
+-- 管理者ロールの作成
+CREATE ROLE app_admin;
+
+-- 管理者用のバイパスポリシー（読み取りのみ）
+CREATE POLICY admin_read_access ON users
+  FOR SELECT
+  USING (current_user = 'app_admin');
+
+CREATE POLICY admin_read_access ON swiped_events
+  FOR SELECT
+  USING (current_user = 'app_admin');
+
+CREATE POLICY admin_read_access ON saved_events
+  FOR SELECT
+  USING (current_user = 'app_admin');
+
+CREATE POLICY admin_read_access ON user_preference_vectors
+  FOR SELECT
+  USING (current_user = 'app_admin');
+```
+
+### 4. アプリケーションサービスアカウント用ポリシー
+
+```sql
+-- アプリケーションサービス用ロール
+CREATE ROLE app_service;
+
+-- イベント収集用のポリシー（バッチ処理用）
+CREATE POLICY service_events_batch ON swiped_events
+  FOR INSERT
+  WITH CHECK (current_user = 'app_service');
+
+-- ベクトル更新用のポリシー（AI処理用）
+CREATE POLICY service_vectors_batch ON user_preference_vectors
+  FOR UPDATE
+  USING (current_user = 'app_service');
+```
+
+### 5. RLS に関する注意事項
+
+1. Firebase Data Connect は`current_user`に Firebase の UID を自動的に設定します
+2. 各ユーザーは自身のデータのみにアクセス可能で、操作も制限されています：
+   - swiped_events: 閲覧、追加、更新が可能
+   - saved_events: 閲覧、追加、削除が可能
+   - user_preference_vectors: 閲覧、更新が可能
+3. 管理者は読み取り専用でデータにアクセス可能です
+4. アプリケーションサービスは必要最小限の権限（バッチ処理用）のみを持ちます
+5. すべての操作はログに記録され、監査可能です
