@@ -1,4 +1,4 @@
-import { z } from "genkit";
+import { z } from "zod";
 
 /**
  * イベントの料金情報を表す Zod スキーマ
@@ -27,9 +27,11 @@ export const SearchedEventSchema = z.object({
   /** イベント会場の経度 */
   longitude: z.number(),
   /** イベントの年齢制限（例: "18歳以上", "制限なし"など） */
-  age_restriction: z.string(),
+  ageRestriction: z.string(),
   /** イベントの料金情報 */
-  price_info: PriceInfoSchema,
+  priceInfo: PriceInfoSchema,
+  /** イベントのURL */
+  webSiteUrl: z.string(),
 });
 
 /**
