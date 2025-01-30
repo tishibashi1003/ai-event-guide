@@ -82,7 +82,8 @@
 - user_id
 - event_source_id
 - start_date
-- embedding_vector（VECTOR）
+- embedding_vector USING ivfflat (vector_cosine_ops)
+- (category, interaction_type, created_at) WHERE interaction_type = 'like'
 
 ### saved_events
 
@@ -92,7 +93,7 @@
 ### user_preference_vectors
 
 - user_id（UNIQUE）
-- preference_vector（VECTOR）
+- preference_vector USING ivfflat (vector_cosine_ops)
 
 ## 外部キー制約
 
@@ -110,20 +111,15 @@
 4. UUID は自動生成されるように設定します
 5. イベント情報は基本的に Vertex AI Studio と Genkit を使用してリアルタイムに取得し、スワイプしたイベントのみをデータベースに保存します
 6. 周辺施設情報（お子様ランチ、授乳室、おむつ替え等）も Vertex AI Studio と Genkit を使用してリアルタイムに取得します
-7. users.preference_vector は以下のように更新されます：
-   - 各スワイプ操作直後に即時更新（like は 0.2、dislike は-0.1 の重みで調整）
-   - 新規ユーザーの場合は初期設定から初期ベクトルを生成
-   - ユーザーによる好みのリセット時に再初期化
-   - 常にベクトルを正規化して保存
+7. レコメンデーションスコアは以下の計算式で算出されます：
+   - コサイン類似度（ベクトル類似度）の重み: 0.7
+   - カテゴリマッチの重み: 0.3
+   - 直近 30 日間のいいねしたカテゴリを考慮
 8. イベントの開始日時・終了日時は保存し、以下の用途で使用します：
    - 保存済みイベントの日付順表示
    - 過去のイベント履歴の参照
    - イベントの有効期限管理
 9. 所要時間は現在地からの車での所要時間を想定していますが、将来的に公共交通機関の所要時間も追加することを検討します
-10. カテゴリの重み付けは以下の方法で動的に計算します：
-    - swiped_events テーブルの interaction_type（like/dislike/save）を基に算出
-    - 直近 30 日間のユーザーの行動履歴から重み付けを計算
-    - カテゴリごとの重みはレコメンデーションエンジンで使用
 
 ## Row Level Security (RLS) 設定
 
@@ -246,14 +242,3 @@ CREATE POLICY service_vectors_batch ON user_preference_vectors
   FOR UPDATE
   USING (current_user = 'app_service');
 ```
-
-### 5. RLS に関する注意事項
-
-1. Firebase Data Connect は`current_user`に Firebase の UID を自動的に設定します
-2. 各ユーザーは自身のデータのみにアクセス可能で、操作も制限されています：
-   - swiped_events: 閲覧、追加、更新が可能
-   - saved_events: 閲覧、追加、削除が可能
-   - user_preference_vectors: 閲覧、更新が可能
-3. 管理者は読み取り専用でデータにアクセス可能です
-4. アプリケーションサービスは必要最小限の権限（バッチ処理用）のみを持ちます
-5. すべての操作はログに記録され、監査可能です

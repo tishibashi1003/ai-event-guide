@@ -352,10 +352,29 @@ USING ivfflat (embedding_vector vector_cosine_ops)
 WITH (lists = 100);
 
 -- 類似イベント検索のクエリ例
-SELECT id, title, description,
-       1 - (embedding_vector <=> user_preference_vector) as similarity
-FROM events
-ORDER BY embedding_vector <=> user_preference_vector
+WITH user_liked_categories AS (
+  -- 直近30日間でユーザーがいいねしたカテゴリを取得
+  SELECT DISTINCT category
+  FROM swiped_events
+  WHERE user_id = :user_id
+    AND interaction_type = 'like'
+    AND created_at > NOW() - INTERVAL '30 days'
+  GROUP BY category
+  HAVING COUNT(*) > 0
+)
+SELECT
+  e.*,
+  (
+    e.embedding_vector <=> :user_preference_vector
+  ) * 0.7 + -- ベクトル類似度の重み（70%）
+  (
+    CASE
+      WHEN e.category IN (SELECT category FROM user_liked_categories) THEN 0.3
+      ELSE 0
+    END
+  ) as weighted_score -- カテゴリマッチの重み（30%）
+FROM events e
+ORDER BY weighted_score DESC
 LIMIT 10;
 ```
 
@@ -467,31 +486,48 @@ export class UserPreferenceVectorManager {
   // 類似イベントの検索
   async findSimilarEvents(params: {
     userVector: number[];
+    userId: string;
     events: Array<{
       id: string;
+      category: string;
       embedding_vector: number[];
-      // その他のイベント情報
     }>;
     limit?: number;
-  }): Promise<Array<{ id: string; similarity: number }>> {
-    const { userVector, events, limit = 10 } = params;
+  }): Promise<Array<{ id: string; score: number }>> {
+    const { userVector, userId, events, limit = 10 } = params;
 
-    // コサイン類似度の計算
-    const similarities = events.map((event) => {
-      const similarity = this.calculateCosineSimilarity(
+    // 直近30日間のいいねしたカテゴリを取得
+    const likedCategories = await db.swiped_events.findMany({
+      where: {
+        user_id: userId,
+        interaction_type: 'like',
+        created_at: {
+          gt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        },
+      },
+      select: { category: true },
+      distinct: ['category'],
+    });
+
+    const likedCategorySet = new Set(likedCategories.map((e) => e.category));
+
+    // 重み付きスコアの計算
+    const scores = events.map((event) => {
+      const cosineSimilarity = this.calculateCosineSimilarity(
         userVector,
         event.embedding_vector
       );
+
+      const categoryScore = likedCategorySet.has(event.category) ? 0.3 : 0;
+
       return {
         id: event.id,
-        similarity,
+        score: cosineSimilarity * 0.7 + categoryScore,
       };
     });
 
-    // 類似度でソートして上位を返す
-    return similarities
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, limit);
+    // スコアでソートして上位を返す
+    return scores.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   // コサイン類似度の計算
@@ -554,6 +590,7 @@ export async function POST(req: Request) {
     const events = await db.swiped_events.findMany();
     const similarEvents = await vectorManager.findSimilarEvents({
       userVector: updatedVector,
+      userId,
       events,
       limit: 10,
     });
