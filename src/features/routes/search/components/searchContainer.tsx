@@ -5,6 +5,7 @@ import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
 import { customEvents, weekendEvents } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
+import { helloFlow } from '../serverActions/genkit';
 
 interface SearchContainerProps {}
 
@@ -22,6 +23,7 @@ export default function SearchContainer({}: SearchContainerProps) {
 
   useEffect(() => {
     setCurrentIndex(0);
+    helloFlow('John');
   }, []);
 
   const handleSwipe = useCallback(
