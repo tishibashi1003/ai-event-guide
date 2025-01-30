@@ -1,6 +1,5 @@
-import KokoIkuList from "../components/koko-iku-list"
+import KokoIkuList from '@/features/routes/kokoiku/components/koko-iku-list';
 
 export default function FavoritesPage() {
-  return <KokoIkuList />
+  return <KokoIkuList />;
 }
-
