@@ -79,6 +79,8 @@ yarn add react-swipeable react-map-gl
 
 ### 2.1 イベント情報収集システム（Vertex AI Studio & Genkit）
 
+参考ドキュメント: [Genkit Google Search Sample](https://github.com/tanabee/genkit-google-search-sample?source=post_page-----7f142f5c9693--------------------------------)
+
 ```typescript
 // src/lib/ai/eventCollector.ts
 import { gemini15Flash, googleAI } from '@genkit-ai/googleai';
