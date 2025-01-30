@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@genkit-ai/googleai": "^0.9.12",
+    "@genkit-ai/vertexai": "^0.9.12",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-switch": "^1.1.2",
     "class-variance-authority": "^0.7.1",
