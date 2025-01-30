@@ -5,11 +5,10 @@ import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
 import { customEvents, weekendEvents } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
-import { helloFlow } from '../serverActions/genkit';
+import { searchGrounding } from '../serverActions/genkit';
+import Image from 'next/image';
 
-interface SearchContainerProps {}
-
-export default function SearchContainer({}: SearchContainerProps) {
+export default function SearchContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState<
     'right' | 'left' | 'up' | 'down' | null
@@ -23,7 +22,20 @@ export default function SearchContainer({}: SearchContainerProps) {
 
   useEffect(() => {
     setCurrentIndex(0);
-    helloFlow('John');
+    async function fetchSearchResult() {
+      const result = await searchGrounding(
+        `
+      以下の条件で週末のイベント情報を収集する
+      - 家族向けイベント
+      - 子供が楽しめるイベント
+      - アウトドアアクティビティ
+      - 文化・教育イベント
+      - 岐阜県垂井町
+    `
+      );
+      console.log('🚀  fetchSearchResult  result.data:', result.data);
+    }
+    fetchSearchResult();
   }, []);
 
   const handleSwipe = useCallback(
@@ -127,10 +139,12 @@ export default function SearchContainer({}: SearchContainerProps) {
               onClick={handleCardClick}
             >
               <div className='relative'>
-                <img
+                <Image
                   src={currentEvent.image || '/placeholder.svg'}
                   alt={currentEvent.title}
                   className='w-full h-48 object-cover'
+                  width={100}
+                  height={48}
                 />
                 <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3'>
                   <h2 className='text-lg font-bold text-white mb-1'>
