@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { User, Bell, Shield, HelpCircle, LogOut } from 'lucide-react';
-import { Switch } from '@/features/common/ui/components/switch';
+import { Switch } from '@/components/switch';
 
 export default function ProfilePage() {
   const [notifications, setNotifications] = useState(true);
