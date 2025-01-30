@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag } from 'lucide-react';
-import { kokoIkuListEvents } from '../types';
+import { kokoIkuListEvents } from '../type';
 
 export default function KokoIkuList() {
   return (
