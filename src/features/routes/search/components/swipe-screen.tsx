@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
-import { customEvents, weekendEvents } from '@/features/routes/event/type';
+import { customEvents, weekendEvents } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
 
 interface SwipeScreenProps {}
