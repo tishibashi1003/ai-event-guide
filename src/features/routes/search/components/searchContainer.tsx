@@ -23,16 +23,7 @@ export default function SearchContainer() {
   useEffect(() => {
     setCurrentIndex(0);
     async function fetchSearchResult() {
-      const result = await searchGrounding(
-        `
-      以下の条件で週末のイベント情報を収集する
-      - 家族向けイベント
-      - 子供が楽しめるイベント
-      - アウトドアアクティビティ
-      - 文化・教育イベント
-      - 岐阜県垂井町
-    `
-      );
+      const result = await searchGrounding();
       console.log('🚀  fetchSearchResult  result.data:', result.data);
     }
     fetchSearchResult();
