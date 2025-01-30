@@ -1,0 +1,6 @@
+---
+description: 新しく TypeScript の型を生成するとき
+globs: 
+---
+- 必ず type を使う
+- Interface は使用しない
