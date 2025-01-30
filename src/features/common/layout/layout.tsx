@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { Home, Star, User } from 'lucide-react';
+import { Home, Search, Star, User } from 'lucide-react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 
@@ -27,7 +27,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
   });
 
   const menuItems = [
-    { path: '/', label: 'さがす', icon: Home },
+    { path: '/search', label: 'さがす', icon: Search },
     { path: '/favorites', label: 'ココいく', icon: Star },
     { path: '/profile', label: 'プロフィール', icon: User },
   ];
