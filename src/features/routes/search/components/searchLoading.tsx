@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import React from 'react';
 
 const MagnifyingGlass = () => (
   <motion.div
@@ -81,37 +82,74 @@ const MagnifyingGlass = () => (
   </motion.div>
 );
 
-const Star = ({ delay, duration }: { delay: number; duration: number }) => (
+const Star = ({
+  delay,
+  duration,
+  left,
+  top,
+}: {
+  delay: number;
+  duration: number;
+  left: number;
+  top: number;
+}) => (
   <motion.div
-    className='absolute w-2 h-2 bg-yellow-100 rounded-full'
-    initial={{ opacity: 0, scale: 0, y: 0 }}
-    animate={{
-      opacity: [0, 1, 1, 0],
-      scale: [0, 1, 1, 0],
-      y: [0, -20, -40, -60],
-    }}
-    transition={{
-      duration: duration,
-      repeat: Number.POSITIVE_INFINITY,
-      delay: delay,
-      ease: 'easeInOut',
-      times: [0, 0.1, 0.9, 1],
+    className='absolute w-2 h-2 bg-[#FFD700] rounded-full'
+    initial='hidden'
+    animate='visible'
+    variants={{
+      hidden: {
+        opacity: 0,
+        scale: 0,
+        y: 0,
+      },
+      visible: {
+        opacity: [0, 1, 1, 0],
+        scale: [0, 1, 1, 0],
+        y: [0, -20, -40, -60],
+        transition: {
+          duration: duration,
+          repeat: Number.POSITIVE_INFINITY,
+          delay: delay,
+          ease: 'easeInOut',
+          times: [0, 0.1, 0.9, 1],
+        },
+      },
     }}
     style={{
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
+      left: `${left}%`,
+      top: `${top}%`,
     }}
   />
 );
 
 export default function SearchLoading() {
+  const stars = React.useMemo(() => {
+    const SEED = 12345; // 固定のシード値
+    const random = (base: number) => {
+      const x = Math.sin(SEED * base) * 10000;
+      return Number(Math.abs(x - Math.floor(x)).toFixed(4));
+    };
+
+    return Array.from({ length: 40 }, (_, i) => {
+      const left = Number((random(i * 4 + 1) * 100).toFixed(4));
+      const top = Number((random(i * 4 + 2) * 100).toFixed(4));
+      const delay = Number((random(i * 4 + 3) * 5).toFixed(4));
+      const duration = Number((5 + random(i * 4 + 4) * 5).toFixed(4));
+
+      return { left, top, delay, duration };
+    });
+  }, []);
+
   return (
     <div className='relative flex flex-col items-center justify-center min-h-screen overflow-hidden'>
-      {[...Array(40)].map((_, i) => (
+      {stars.map((star, i) => (
         <Star
           key={i}
-          delay={Math.random() * 5}
-          duration={5 + Math.random() * 5}
+          delay={star.delay}
+          duration={star.duration}
+          left={star.left}
+          top={star.top}
         />
       ))}
       <motion.div
