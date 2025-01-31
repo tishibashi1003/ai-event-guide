@@ -1,11 +1,11 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useState } from 'react';
-import { Home, Search, Star, User } from 'lucide-react';
+import { useState } from 'react';
+import { Search, Star, User } from 'lucide-react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-
+import CuteStylishLogo from '@/components/LogoHorizontal';
 interface LayoutProps {
   children: React.ReactNode;
   currentPath: string;
@@ -42,9 +42,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         <div className='flex items-center justify-center px-4 h-16'>
-          <h1 className='text-2xl font-bold text-[#FFD700] tracking-wide'>
-            ココいく
-          </h1>
+          <CuteStylishLogo />
         </div>
       </motion.header>
 
