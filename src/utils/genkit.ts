@@ -7,7 +7,7 @@ import { vertexAI } from '@genkit-ai/vertexai';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getGenkitInstance = async ({ model = gemini15Flash }: { model?: ModelArgument<any> }) => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const serviceAccount = require('../../credentials.json');
+  const serviceAccount = require('../../credentials.serviceAccount.json');
 
   return genkit({
     plugins: [googleAI({
