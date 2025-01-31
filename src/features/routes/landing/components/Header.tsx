@@ -9,7 +9,7 @@ import LogoHorizontal from '@/components/logo/LogoHorizontal';
 export const Header = ({ className }: HeaderProps) => {
   return (
     <header
-      className={`container mx-auto px-4 py-6 flex items-center justify-between relative z-10 ${className}`}
+      className={`px-8 py-4 flex items-center justify-between relative z-10 bg-white w-full ${className}`}
     >
       <div className='flex items-center gap-2'>
         <LogoHorizontal />
