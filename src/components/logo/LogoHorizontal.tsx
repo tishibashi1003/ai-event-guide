@@ -1,11 +1,11 @@
 import type React from 'react';
 
-interface CuteStylishLogoProps {
+interface LogoHorizontalProps {
   width?: number;
   height?: number;
 }
 
-const CuteStylishLogo: React.FC<CuteStylishLogoProps> = ({
+const LogoHorizontal: React.FC<LogoHorizontalProps> = ({
   width = 160,
   height = 40,
 }) => {
@@ -80,4 +80,4 @@ const CuteStylishLogo: React.FC<CuteStylishLogoProps> = ({
   );
 };
 
-export default CuteStylishLogo;
+export default LogoHorizontal;

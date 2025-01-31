@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Search, Star, User } from 'lucide-react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import CuteStylishLogo from '@/components/LogoHorizontal';
+import LogoHorizontal from '@/components/logo/LogoHorizontal';
 interface LayoutProps {
   children: React.ReactNode;
   currentPath: string;
@@ -36,22 +36,22 @@ export default function Layout({ children, currentPath }: LayoutProps) {
     <div className='min-h-screen bg-white'>
       {/* ヘッダー */}
       <motion.header
-        className='fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm shadow-sm z-50'
+        className='fixed top-0 left-0 right-0 z-50 shadow-sm bg-white/95 backdrop-blur-sm'
         initial={{ y: 0 }}
         animate={{ y: isHeaderVisible ? 0 : -100 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
-        <div className='flex items-center justify-center px-4 h-16'>
-          <CuteStylishLogo />
+        <div className='flex items-center justify-center h-16 px-4'>
+          <LogoHorizontal />
         </div>
       </motion.header>
 
       {/* メインコンテンツ */}
-      <main className='pt-16 pb-20 min-h-screen'>{children}</main>
+      <main className='min-h-screen pt-16 pb-20'>{children}</main>
 
       {/* フッターナビゲーション */}
-      <nav className='fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-gray-100 z-50'>
-        <div className='flex items-center justify-around h-16 px-6 max-w-md mx-auto'>
+      <nav className='fixed bottom-0 left-0 right-0 z-50 border-t border-gray-100 bg-white/95 backdrop-blur-sm'>
+        <div className='flex items-center justify-around h-16 max-w-md px-6 mx-auto'>
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentPath === item.path;
