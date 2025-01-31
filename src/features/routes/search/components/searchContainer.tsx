@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
-import { Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
+import { AnimatePresence, type PanInfo } from 'framer-motion';
+import { Star, X, Check } from 'lucide-react';
 import { type OutputEvent } from '@/features/routes/search/type';
 import { searchGrounding } from '../serverActions/genkit';
-import Image from 'next/image';
 import SearchLoading from './searchLoading';
 import { type Event } from '@/features/common/event/type';
 import EventDetail from '@/features/routes/eventDetail/components/event-detail';
+import EventCard from './EventCard';
 
 const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
   return {
@@ -114,7 +114,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('weekend')}
           >
-            もうすぐ
+            今週
           </button>
           <button
             className={`flex-1 py-2 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -124,7 +124,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('custom')}
           >
-            いつでも
+            もうすぐ
           </button>
         </div>
       </header>
@@ -136,77 +136,12 @@ export default function SearchContainer() {
           </div>
         ) : currentEvent ? (
           <AnimatePresence initial={false}>
-            <motion.div
-              key={currentEvent.id}
-              className='w-full max-w-sm bg-white rounded-2xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing'
-              initial={{
-                scale: 0.8,
-                opacity: 0,
-                y: direction === 'down' ? -300 : 0,
-                x:
-                  direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
-              }}
-              animate={{ scale: 1, opacity: 1, y: 0, x: 0 }}
-              exit={{
-                x:
-                  direction === 'left' ? -300 : direction === 'right' ? 300 : 0,
-                y: direction === 'down' ? 300 : 0,
-                opacity: 0,
-                scale: 0.8,
-              }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              drag='x'
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={1}
+            <EventCard
+              event={currentEvent}
+              direction={direction}
               onDragEnd={handleDragEnd}
               onClick={handleCardClick}
-            >
-              <div className='relative'>
-                <Image
-                  src={currentEvent.image || '/placeholder.svg'}
-                  alt={currentEvent.title}
-                  className='w-full h-48 object-cover'
-                  width={100}
-                  height={48}
-                />
-                <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3'>
-                  <h2 className='text-lg font-bold text-white mb-1'>
-                    {currentEvent.title}
-                  </h2>
-                  <div className='flex items-center text-white opacity-90'>
-                    <Calendar size={14} className='mr-1' />
-                    <span className='text-xs'>{currentEvent.date}</span>
-                  </div>
-                </div>
-              </div>
-              <div className='p-3 bg-[#F8F8F8]'>
-                <div className='flex items-center mb-2'>
-                  <Tag size={16} className='mr-2 text-[#D18700]' />
-                  <span className='text-sm font-semibold text-[#D18700]'>
-                    {currentEvent.price}
-                  </span>
-                </div>
-                <div className='flex items-center mb-3'>
-                  <Users size={16} className='mr-2 text-[#B39700]' />
-                  <span className='text-sm text-[#B39700]'>
-                    {currentEvent.ageRange}
-                  </span>
-                </div>
-                <div className='flex flex-wrap gap-2'>
-                  {currentEvent.categories.map((category, index) => (
-                    <span
-                      key={index}
-                      className='px-3 py-1 bg-[#FFD700] bg-opacity-30 text-[#8A7500] text-xs font-medium rounded-full'
-                    >
-                      {category}
-                    </span>
-                  ))}
-                </div>
-                <div className='text-sm text-[#595959] line-clamp-3'>
-                  {currentEvent.description}
-                </div>
-              </div>
-            </motion.div>
+            />
           </AnimatePresence>
         ) : (
           <div className='text-center text-[#808080]'>
