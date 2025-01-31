@@ -7,7 +7,7 @@ import { type OutputEvent, type Event } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
 import { searchGrounding } from '../serverActions/genkit';
 import Image from 'next/image';
-import GoldenSmoothLoopingCuteSearchAnimation from './searchLoading';
+import SearchLoading from './searchLoading';
 
 const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
   return {
@@ -103,7 +103,7 @@ export default function SearchContainer() {
   }
 
   return (
-    <div className='flex flex-col h-screen bg-gradient-to-b from-[#FFFDF0] to-white'>
+    <div className='flex flex-col h-[80vh] bg-gradient-to-b from-[#FFFDF0] to-white'>
       <header className='flex flex-col items-center justify-between p-4 bg-white shadow-md'>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
@@ -114,7 +114,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('weekend')}
           >
-            今週末
+            もうすぐ
           </button>
           <button
             className={`flex-1 py-2 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -124,7 +124,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('custom')}
           >
-            カスタム
+            いつでも
           </button>
         </div>
       </header>
@@ -132,7 +132,7 @@ export default function SearchContainer() {
       <main className='flex-grow flex justify-center items-center px-2 py-0.5 overflow-hidden'>
         {isLoading ? (
           <div className='flex flex-col items-center justify-center space-y-4'>
-            <GoldenSmoothLoopingCuteSearchAnimation />
+            <SearchLoading />
           </div>
         ) : currentEvent ? (
           <AnimatePresence initial={false}>
@@ -224,7 +224,7 @@ export default function SearchContainer() {
         )}
       </main>
 
-      <footer className='flex justify-around items-center p-2 max-w-md mx-auto w-full bg-white shadow-inner'>
+      <footer className='flex justify-around items-center p-2 pt-6 max-w-md mx-auto w-full bg-white shadow-inner'>
         <button
           className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#FF3B30] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#FFEEEE] focus:outline-none focus:ring-2 focus:ring-[#FF3B30] focus:ring-opacity-50'
           onClick={() => handleSwipe('left')}

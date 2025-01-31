@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 
 const MagnifyingGlass = () => (
   <motion.div
+    initial={{ x: 0, y: 0, rotate: 0, scale: 1 }}
     animate={{
       x: [0, 20, 0, -20, 0],
       y: [0, -15, 20, -15, 0],
@@ -15,9 +16,10 @@ const MagnifyingGlass = () => (
       repeat: Number.POSITIVE_INFINITY,
       ease: 'easeInOut',
       times: [0, 0.25, 0.5, 0.75, 1],
+      delay: 0.5, // 少し遅延を加えて、最初の状態を見せる
     }}
   >
-    <motion.svg
+    <svg
       width='120'
       height='120'
       viewBox='0 0 120 120'
@@ -31,13 +33,14 @@ const MagnifyingGlass = () => (
         stroke='#FFD700'
         strokeWidth='8'
         fill='white'
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: [0, 1, 0] }}
+        initial={{ pathLength: 1 }} // 最初から完全な円を表示
+        animate={{ pathLength: [1, 0, 1] }}
         transition={{
           duration: 8,
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
           times: [0, 0.5, 1],
+          delay: 0.5,
         }}
       />
       <motion.line
@@ -48,13 +51,14 @@ const MagnifyingGlass = () => (
         stroke='#FFD700'
         strokeWidth='8'
         strokeLinecap='round'
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: [0, 1, 0] }}
+        initial={{ pathLength: 1 }} // 最初から完全な線を表示
+        animate={{ pathLength: [1, 0, 1] }}
         transition={{
           duration: 8,
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
           times: [0, 0.5, 1],
+          delay: 0.5,
         }}
       />
       <motion.circle
@@ -70,9 +74,10 @@ const MagnifyingGlass = () => (
           duration: 3,
           repeat: Number.POSITIVE_INFINITY,
           ease: 'easeInOut',
+          delay: 0.5,
         }}
       />
-    </motion.svg>
+    </svg>
   </motion.div>
 );
 
@@ -99,7 +104,7 @@ const Star = ({ delay, duration }: { delay: number; duration: number }) => (
   />
 );
 
-export default function GoldenSmoothLoopingCuteSearchAnimation() {
+export default function SearchLoading() {
   return (
     <div className='relative flex flex-col items-center justify-center min-h-screen overflow-hidden'>
       {[...Array(40)].map((_, i) => (
@@ -110,22 +115,29 @@ export default function GoldenSmoothLoopingCuteSearchAnimation() {
         />
       ))}
       <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
         <MagnifyingGlass />
       </motion.div>
       <motion.p
-        className='mt-4 text-sm font-medium text-[#595959]'
-        animate={{ opacity: [1, 0.7, 1] }}
-        transition={{
-          duration: 2,
-          repeat: Number.POSITIVE_INFINITY,
-          ease: 'easeInOut',
-        }}
+        className='mt-4 text-sm font-medium text-[#FFD700]'
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
       >
-        開催予定のイベントを検索中...
+        <motion.span
+          animate={{ opacity: [1, 0.7, 1] }}
+          transition={{
+            duration: 2,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: 'easeInOut',
+            delay: 1,
+          }}
+        >
+          開催予定のイベントを検索中...
+        </motion.span>
       </motion.p>
     </div>
   );
