@@ -39,11 +39,13 @@ const CardStack: React.FC<CardStackProps> = ({ events }) => {
           />
         ) : (
           <div className='w-full h-full flex items-center justify-center bg-white rounded-lg shadow-md'>
-            <p className='text-xl font-bold text-gray-500'>No more cards</p>
+            <p className='text-md font-bold text-gray-500'>
+              これ以上イベントはありません。
+            </p>
           </div>
         )}
       </div>
-      <div className='flex justify-between items-center mt-4'>
+      <div className='flex justify-between items-center mt-8'>
         <footer className='flex justify-around items-center p-2 pt-6 max-w-md mx-auto w-full bg-white'>
           <button
             className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#FF3B30] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#FFEEEE] focus:outline-none focus:ring-2 focus:ring-[#FF3B30] focus:ring-opacity-50'

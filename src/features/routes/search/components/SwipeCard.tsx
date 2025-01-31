@@ -66,7 +66,6 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
       dragConstraints={{ left: 0, right: 0 }}
       onDragEnd={handleDragEnd}
       animate={controls}
-      // className='w-full max-w-sm overflow-hidden shadow-md cursor-grab active:cursor-grabbing rounded-lg border border-gray-200'
     >
       <div className='bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100 h-40 flex items-center justify-center relative'>
         <div className='text-center p-4 z-10'>

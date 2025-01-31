@@ -76,7 +76,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('weekend')}
           >
-            今週
+            もうすぐ
           </button>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -86,7 +86,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('custom')}
           >
-            もうすぐ
+            おすすめ
           </button>
         </div>
       </header>
