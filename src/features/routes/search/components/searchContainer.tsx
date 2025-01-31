@@ -7,9 +7,11 @@ import SearchLoading from './searchLoading';
 import { type Event } from '@/features/common/event/type';
 import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
+import VerticalCard from './VerticalCard';
+
 const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
   return {
-    id: outputEvent.sourceUrl, // URLをIDとして使用
+    id: outputEvent.sourceUrl + outputEvent.eventTitle, // URLをIDとして使用
     title: outputEvent.eventTitle,
     emoji: outputEvent.eventEmoji,
     date: `${outputEvent.eventStartDate} - ${outputEvent.eventEndDate}`,
@@ -65,8 +67,8 @@ export default function SearchContainer() {
   }
 
   return (
-    <div className='flex flex-col h-[80vh] max-w-sm mx-auto'>
-      <header className='flex flex-col items-center justify-between p-4'>
+    <div className='flex flex-col h-screen max-w-sm mx-auto'>
+      <header className='flex flex-col items-center justify-between p-4 flex-shrink-0'>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -91,19 +93,33 @@ export default function SearchContainer() {
         </div>
       </header>
 
-      <main className='flex-grow flex justify-center items-center px-2 py-0.5 overflow-hidden w-full'>
+      <main className='flex-1 overflow-hidden'>
         {isLoading ? (
-          <div className='flex flex-col items-center justify-center space-y-4'>
+          <div className='flex flex-col items-center justify-center h-full space-y-4'>
             <SearchLoading />
           </div>
         ) : currentEvent ? (
-          <CardStack events={events} />
+          activeTab === 'weekend' ? (
+            <div className='h-full overflow-y-auto px-4 pb-4'>
+              {events.map((event) => (
+                <VerticalCard
+                  key={event.id}
+                  event={event}
+                  onClick={() => setShowDetail(true)}
+                />
+              ))}
+            </div>
+          ) : (
+            <CardStack events={events} />
+          )
         ) : (
-          <div className='text-center text-[#808080]'>
-            <p className='text-lg font-semibold mb-1'>イベントがありません</p>
-            <p className='text-sm'>
-              現在、この分類のイベントは登録されていません。
-            </p>
+          <div className='flex items-center justify-center h-full text-center text-[#808080]'>
+            <div>
+              <p className='text-lg font-semibold mb-1'>イベントがありません</p>
+              <p className='text-sm'>
+                現在、この分類のイベントは登録されていません。
+              </p>
+            </div>
           </div>
         )}
       </main>
