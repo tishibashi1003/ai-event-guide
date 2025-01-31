@@ -45,10 +45,6 @@ export default function SearchContainer() {
         const result = await searchGrounding();
         if (result.success && result.data) {
           const convertedEvents = result.data.map(convertOutputEventToEvent);
-          console.log(
-            '🚀  fetchSearchResult  convertedEvents:',
-            convertedEvents
-          );
           setSearchResults(convertedEvents);
         }
       } catch (error) {
@@ -68,7 +64,7 @@ export default function SearchContainer() {
 
   return (
     <div className='flex flex-col h-screen max-w-sm mx-auto'>
-      <header className='flex flex-col items-center justify-between p-4 flex-shrink-0'>
+      <header className='flex flex-col items-center justify-between flex-shrink-0 p-4'>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -100,7 +96,7 @@ export default function SearchContainer() {
           </div>
         ) : currentEvent ? (
           activeTab === 'weekend' ? (
-            <div className='h-full overflow-y-auto px-4 pb-4'>
+            <div className='h-full px-4 pb-4 overflow-y-auto'>
               {events.map((event) => (
                 <VerticalCard
                   key={event.id}
@@ -115,7 +111,7 @@ export default function SearchContainer() {
         ) : (
           <div className='flex items-center justify-center h-full text-center text-[#808080]'>
             <div>
-              <p className='text-lg font-semibold mb-1'>イベントがありません</p>
+              <p className='mb-1 text-lg font-semibold'>イベントがありません</p>
               <p className='text-sm'>
                 現在、この分類のイベントは登録されていません。
               </p>
