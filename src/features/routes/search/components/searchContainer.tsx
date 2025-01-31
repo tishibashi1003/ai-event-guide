@@ -103,8 +103,8 @@ export default function SearchContainer() {
   }
 
   return (
-    <div className='flex flex-col h-[80vh] bg-gradient-to-b from-[#FFFDF0] to-white'>
-      <header className='flex flex-col items-center justify-between p-4 bg-white shadow-md'>
+    <div className='flex flex-col h-[80vh]'>
+      <header className='flex flex-col items-center justify-between p-4'>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
             className={`flex-1 py-2 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -224,7 +224,7 @@ export default function SearchContainer() {
         )}
       </main>
 
-      <footer className='flex justify-around items-center p-2 pt-6 max-w-md mx-auto w-full bg-white shadow-inner'>
+      <footer className='flex justify-around items-center p-2 pt-6 max-w-md mx-auto w-full bg-white'>
         <button
           className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#FF3B30] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#FFEEEE] focus:outline-none focus:ring-2 focus:ring-[#FF3B30] focus:ring-opacity-50'
           onClick={() => handleSwipe('left')}
