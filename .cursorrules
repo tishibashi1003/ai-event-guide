@@ -155,12 +155,14 @@ src/
 │   │       ├── components/  ... UIコンポーネント
 │   │       ├── hooks.ts     ... カスタムフック
 │   │       ├── serverActions/ ... サーバーサイドのロジック
+│   │       ├── prompts/ ... プロンプト
 │   │       └── type.ts      ... 型定義
 │   └── routes/   ... 特定のページで使うもの
 │       └── feature-name/
 │           ├── components/  ... UIコンポーネント
 │           ├── hooks.ts     ... カスタムフック
 │           ├── serverActions/ ... サーバーサイドのロジック
+│           ├── prompts/ ... プロンプト
 │           └── type.ts      ... 型定義
 ├── components/   ... ロジックがない共通コンポーネント
 ├── hooks/        ... 共通ロジックの内、React Hooksがあるもの
