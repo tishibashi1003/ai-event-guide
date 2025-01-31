@@ -3,9 +3,22 @@
 import { useState } from 'react';
 import { User, Bell, Shield, HelpCircle, LogOut } from 'lucide-react';
 import { Switch } from '@/features/routes/search/components/switch';
+import { useAuth } from '@/features/common/auth/AuthContext';
+import { useRouter } from 'next/navigation';
 
 export const ProfileContainer = () => {
   const [notifications, setNotifications] = useState(true);
+  const { signOut } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('ログアウト中にエラーが発生しました:', error);
+    }
+  };
 
   return (
     <div className='max-w-md min-h-screen p-4 mx-auto bg-white'>
@@ -40,7 +53,10 @@ export const ProfileContainer = () => {
 
         <hr className='my-4' />
 
-        <button className='flex items-center w-full py-2 text-[#FF3B30]'>
+        <button
+          onClick={handleLogout}
+          className='flex items-center w-full py-2 text-[#FF3B30]'
+        >
           <LogOut size={20} className='mr-3' />
           <span>ログアウト</span>
         </button>
