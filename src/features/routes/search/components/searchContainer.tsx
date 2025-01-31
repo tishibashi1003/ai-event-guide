@@ -2,12 +2,13 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
-import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
-import { type OutputEvent, type Event } from '@/features/routes/search/type';
-import EventDetail from '../../eventDetail/components/event-detail';
+import { Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
+import { type OutputEvent } from '@/features/routes/search/type';
 import { searchGrounding } from '../serverActions/genkit';
 import Image from 'next/image';
 import SearchLoading from './searchLoading';
+import { type Event } from '@/features/common/event/type';
+import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 
 const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
   return {
@@ -16,7 +17,6 @@ const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
     image: '/placeholder.svg', // デフォルトの画像を使用
     date: `${outputEvent.eventStartDate} - ${outputEvent.eventEndDate}`,
     location: outputEvent.locationName,
-    distance: '計算中...', // 距離は後で計算
     price: `大人: ${outputEvent.priceInfo.adult}円, 子供: ${outputEvent.priceInfo.child}円`,
     ageRange: outputEvent.ageRestriction,
     categories: [], // カテゴリーは後で追加
@@ -180,12 +180,6 @@ export default function SearchContainer() {
                 </div>
               </div>
               <div className='p-3 bg-[#F8F8F8]'>
-                <div className='flex items-center text-[#595959] mb-2'>
-                  <MapPin size={16} className='mr-2' />
-                  <span className='text-sm'>
-                    {currentEvent.location} • {currentEvent.distance}
-                  </span>
-                </div>
                 <div className='flex items-center mb-2'>
                   <Tag size={16} className='mr-2 text-[#D18700]' />
                   <span className='text-sm font-semibold text-[#D18700]'>
