@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { User, Bell, Shield, HelpCircle, LogOut } from 'lucide-react';
-import { Switch } from '@/components/switch';
+import { Switch } from '@/features/routes/search/components/switch';
 
 export default function ProfilePage() {
   const [notifications, setNotifications] = useState(true);
 
   return (
-    <div className='p-4 max-w-md mx-auto bg-white min-h-screen'>
+    <div className='max-w-md min-h-screen p-4 mx-auto bg-white'>
       <div className='flex items-center mb-8'>
         <div className='w-20 h-20 bg-[#FFD700] rounded-full flex items-center justify-center'>
           <User size={32} className='text-white' />
