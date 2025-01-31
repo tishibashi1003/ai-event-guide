@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 export interface Event {
   id: string
   title: string
@@ -134,22 +136,9 @@ export const kokoIkuListEvents: Event[] = [
   },
 ]
 
+export const SearchEventInputSchema = z.object({
+  prefecture: z.string(),
+  city: z.string(),
+});
 
-// export interface Event {
-//   id: string;
-//   title: string;
-//   description: string;
-//   event_date: string;
-//   location_name: string;
-//   latitude: number;
-//   longitude: number;
-//   price_info: {
-//     adult: number;
-//     child: number;
-//   };
-//   age_restriction?: string;
-//   tags: string[];
-//   imageUrl?: string;
-//   travel_time_car?: number;
-//   embedding_vector?: number[];
-// }
+export type SearchEventInput = z.infer<typeof SearchEventInputSchema>;
