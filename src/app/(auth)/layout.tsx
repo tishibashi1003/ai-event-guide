@@ -2,6 +2,7 @@ import Layout from '@/features/common/layout/layout';
 import './../globals.css';
 import { Inter } from 'next/font/google';
 import type React from 'react';
+import { AuthGuard } from '@/features/common/auth/AuthGuard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang='ja'>
       <body className={inter.className}>
-        <Layout currentPath={'/'}>{children}</Layout>
+        <Layout currentPath={'/'}>
+          <AuthGuard>{children}</AuthGuard>
+        </Layout>
       </body>
     </html>
   );

@@ -5,8 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/features/common/auth/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export const LoginContainer = () => {
+  const { signInWithGoogle, user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push('/search');
+    }
+  }, [user, router]);
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error('ログインエラー:', error);
+    }
+  };
+
   return (
     <div className='flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-amber-50 to-white'>
       <Card className='w-full max-w-md'>
@@ -17,7 +37,7 @@ export const LoginContainer = () => {
           Googleアカウントでログイン・会員登録
         </p>
         <CardContent>
-          <Button className='w-full mb-4' onClick={() => {}}>
+          <Button className='w-full mb-4' onClick={handleGoogleLogin}>
             <svg className='w-5 h-5 mr-2' viewBox='0 0 24 24'>
               <path
                 fill='currentColor'
