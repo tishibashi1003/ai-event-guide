@@ -104,7 +104,7 @@ const Star = ({
         y: 0,
       },
       visible: {
-        opacity: [0, 1, 1, 0],
+        opacity: [0, 0.3, 0.3, 0],
         scale: [0, 1, 1, 0],
         y: [0, -20, -40, -60],
         transition: {
