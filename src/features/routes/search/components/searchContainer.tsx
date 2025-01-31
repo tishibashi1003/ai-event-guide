@@ -65,7 +65,7 @@ export default function SearchContainer() {
   }
 
   return (
-    <div className='flex flex-col h-[80vh] max-w-md mx-auto'>
+    <div className='flex flex-col h-[80vh] max-w-sm mx-auto'>
       <header className='flex flex-col items-center justify-between p-4'>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button

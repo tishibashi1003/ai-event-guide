@@ -39,11 +39,11 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   useEffect(() => {
     if (swipeDirection === 'left') {
       controls
-        .start({ x: -300, opacity: 0, transition: { duration: 0.3 } })
+        .start({ x: -300, opacity: 0, transition: { duration: 0.6 } })
         .then(() => onSwipe('left'));
     } else if (swipeDirection === 'right') {
       controls
-        .start({ x: 300, opacity: 0, transition: { duration: 0.3 } })
+        .start({ x: 300, opacity: 0, transition: { duration: 0.6 } })
         .then(() => onSwipe('right'));
     }
   }, [swipeDirection, controls, onSwipe]);

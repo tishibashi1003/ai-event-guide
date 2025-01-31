@@ -14,8 +14,7 @@ const CardStack: React.FC<CardStackProps> = ({ events }) => {
     null
   );
 
-  const handleSwipe = (direction: 'left' | 'right') => {
-    console.log(`Swiped ${direction}`);
+  const handleSwipe = () => {
     setSwipeDirection(null);
     setCurrentIndex((prevIndex) => prevIndex + 1);
   };
