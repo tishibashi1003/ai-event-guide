@@ -34,12 +34,12 @@ export const HeroSection = ({ className }: HeroSectionProps) => {
       </div>
 
       {/* Content */}
-      <div className='container mx-auto px-4 py-20 relative z-10'>
+      <div className='container relative z-10 px-4 py-20 mx-auto'>
         <div className='max-w-3xl mx-auto text-center'>
-          <h1 className='text-4xl md:text-6xl font-bold text-gray-900 mb-6'>
+          <h1 className='mb-6 text-4xl font-bold text-gray-900 md:text-6xl'>
             週末をもっと楽しく、もっとワクワクに
           </h1>
-          <p className='text-xl md:text-2xl text-gray-600 mb-12'>
+          <p className='mb-12 text-xl text-gray-600 md:text-2xl'>
             家族みんなの「好き」から、素敵な週末のお出かけ先を見つけよう
           </p>
           <Button
@@ -47,9 +47,9 @@ export const HeroSection = ({ className }: HeroSectionProps) => {
             className='rounded-full bg-amber-400 hover:bg-amber-500'
             asChild
           >
-            <Link href='/auth'>
+            <Link href='/login'>
               無料で始める
-              <ArrowRight className='ml-2 h-4 w-4' />
+              <ArrowRight className='w-4 h-4 ml-2' />
             </Link>
           </Button>
         </div>
