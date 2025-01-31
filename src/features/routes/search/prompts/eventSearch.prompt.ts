@@ -28,6 +28,8 @@ export const eventSearchPrompt = async (genkit: Genkit, input: { address: Addres
         - 石橋プレミアムアウトレット
       - OK
         - 石橋プレミアムアウトレットで開催されるバレンタインデーイベント
+    - eventCategories は英単語1語で返すこと
+      - 例) Art
 
     ## 検索条件
     - {{prefecture}} のみ

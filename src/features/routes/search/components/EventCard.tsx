@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { motion, PanInfo } from 'framer-motion';
-import { Calendar, Users, Tag } from 'lucide-react';
-import Image from 'next/image';
+import { Calendar, Users } from 'lucide-react';
 import { type Event } from '@/features/common/event/type';
 
 interface EventCardProps {
@@ -25,7 +24,7 @@ export default function EventCard({
   return (
     <motion.div
       key={event.id}
-      className='w-full max-w-sm bg-white rounded-2xl shadow-lg overflow-hidden cursor-grab active:cursor-grabbing'
+      className='w-full max-w-sm overflow-hidden shadow-md cursor-grab active:cursor-grabbing rounded-lg border border-gray-200'
       initial={{
         scale: 0.8,
         opacity: 0,
@@ -46,46 +45,29 @@ export default function EventCard({
       onDragEnd={onDragEnd}
       onClick={onClick}
     >
-      <div className='relative'>
-        <Image
-          src={event.image || '/placeholder.svg'}
-          alt={event.title}
-          className='w-full h-48 object-cover'
-          width={100}
-          height={48}
-        />
-        <div className='absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3'>
-          <h2 className='text-lg font-bold text-white mb-1'>{event.title}</h2>
-          <div className='flex items-center text-white opacity-90'>
-            <Calendar size={14} className='mr-1' />
-            <span className='text-xs'>{event.date}</span>
-          </div>
+      <div className='bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100 h-40 flex items-center justify-center relative'>
+        <div className='text-center p-4 z-10'>
+          <span className='text-5xl'>{event.emoji}</span>
+          <p className='mt-3 font-medium text-yellow-800 text-md'>
+            {event.category}
+          </p>
         </div>
       </div>
-      <div className='p-3 bg-[#F8F8F8]'>
-        <div className='flex items-center mb-2'>
-          <Tag size={16} className='mr-2 text-[#D18700]' />
-          <span className='text-sm font-semibold text-[#D18700]'>
-            {event.price}
-          </span>
+
+      <div className='p-6 space-y-4 bg-white'>
+        <h2 className='text-xl font-bold text-gray-800'>{event.title}</h2>
+
+        <div className='flex items-center text-gray-600'>
+          <Calendar className='w-5 h-5 mr-2 text-yellow-500' />
+          <span>{event.date}</span>
         </div>
-        <div className='flex items-center mb-3'>
-          <Users size={16} className='mr-2 text-[#B39700]' />
-          <span className='text-sm text-[#B39700]'>{event.ageRange}</span>
+
+        <div className='flex items-center text-gray-600'>
+          <Users className='w-5 h-5 mr-2 text-yellow-500' />
+          <span>{event.price}</span>
         </div>
-        <div className='flex flex-wrap gap-2'>
-          {event.categories.map((category, index) => (
-            <span
-              key={index}
-              className='px-3 py-1 bg-[#FFD700] bg-opacity-30 text-[#8A7500] text-xs font-medium rounded-full'
-            >
-              {category}
-            </span>
-          ))}
-        </div>
-        <div className='text-sm text-[#595959] line-clamp-3'>
-          {event.description}
-        </div>
+
+        <p className='text-gray-700 line-clamp-3'>{event.description}</p>
       </div>
     </motion.div>
   );

@@ -31,6 +31,10 @@ export const OutputEventSchema = z.object({
   priceInfo: PriceInfoSchema,
   /** イベントのURL */
   sourceUrl: z.string(),
+  /** イベントのアイコン */
+  eventEmoji: z.string(),
+  /** イベントのカテゴリー */
+  eventCategory: z.string(),
 });
 
 /**

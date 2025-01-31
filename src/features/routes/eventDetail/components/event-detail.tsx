@@ -8,7 +8,6 @@ import {
   ChevronDown,
   MapIcon,
 } from 'lucide-react';
-import Image from 'next/image';
 import { Event } from '@/features/common/event/type';
 interface EventDetailProps {
   event: Event | null;
@@ -19,13 +18,8 @@ export default function EventDetail({ event, onBack }: EventDetailProps) {
   return (
     <div className='flex flex-col min-h-screen bg-white'>
       <header className='relative'>
-        <Image
-          src={event?.image || '/placeholder.svg'}
-          alt={event?.title || ''}
-          className='w-full h-64 object-cover'
-          width={100}
-          height={100}
-        />
+        <span className='text-6xl'>{event?.emoji}</span>
+        <button />
         <button
           onClick={onBack}
           className='absolute top-4 left-4 w-10 h-10 bg-[#FFD700] rounded-full flex items-center justify-center shadow-lg'
@@ -55,17 +49,6 @@ export default function EventDetail({ event, onBack }: EventDetailProps) {
         <div className='flex items-center mb-4'>
           <Users size={18} className='mr-2 text-[#FFD700]' />
           <span className='text-[#FFD700]'>{event?.ageRange}</span>
-        </div>
-
-        <div className='flex flex-wrap gap-2 mb-6'>
-          {event?.categories.map((category, index) => (
-            <span
-              key={index}
-              className='px-3 py-1 bg-[#FFD700] text-black rounded-full'
-            >
-              {category}
-            </span>
-          ))}
         </div>
 
         <div className='mb-6'>
