@@ -16,7 +16,7 @@ export const Header = ({ className }: HeaderProps) => {
       </div>
       <div className='flex items-center gap-2'>
         <Button variant='outline' className='rounded-full' asChild>
-          <Link href='/auth'>
+          <Link href='/login'>
             ログイン / 会員登録
             <ArrowRight className='w-4 h-4 ml-2' />
           </Link>
