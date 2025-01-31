@@ -1,34 +1,42 @@
 'use server';
 
-import { SearchedEventSchema } from '@/features/common/types/searchedEvent';
-import { SearchEventInput, SearchEventInputSchema } from '../type';
-import { Genkit } from 'genkit';
+import { OutputEventSchema, Address, AddressSchema } from '../type';
+import { Genkit, z } from 'genkit';
 
-export const eventSearchPrompt = async (genkit: Genkit, input: SearchEventInput) => {
+export const eventSearchPrompt = async (genkit: Genkit, input: { address: Address }) => {
   return await genkit.definePrompt(
     {
       name: 'eventSearchPrompt',
       input: {
-        schema: SearchEventInputSchema,
+        schema: z.object({
+          ...AddressSchema.shape,
+        }),
       },
       output: {
         format: 'json',
-        schema: SearchedEventSchema.array(),
+        schema: OutputEventSchema.array(),
       },
     },
     `
-        以下の条件でイベント情報を収集する
-        - 家族向けイベント
-        - 子供が楽しめるイベント
-        - アウトドアアクティビティ
-        - 文化・教育イベント
-        - 開催場所は {{prefecture}} 付近
-        - 開催期間は 2025-01-01 から 2025-02-28 まで
-        `
+    以下の条件で開催されるイベント情報検索して応答する
+
+    ## output
+    - json 内の value は全て日本語で返すこと。
+    - 施設を返すのではなく施設で開催される予定の具体的なイベント内容を返す
+    - 例)
+      - NG
+        - 石橋プレミアムアウトレット
+      - OK
+        - 石橋プレミアムアウトレットで開催されるバレンタインデーイベント
+
+    ## 検索条件
+    - {{prefecture}} のみ
+    - イベント対象期間
+      - 2025年1月 - 2025年2月
+    `
   )(
     {
-      prefecture: input.prefecture,
-      city: input.city,
+      ...input.address,
     }
   );
 };
