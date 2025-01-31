@@ -3,10 +3,25 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence, type PanInfo } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag, Star, X, Check } from 'lucide-react';
-import { customEvents, weekendEvents } from '@/features/routes/search/type';
+import { type OutputEvent, type Event } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
 import { searchGrounding } from '../serverActions/genkit';
 import Image from 'next/image';
+
+const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
+  return {
+    id: outputEvent.sourceUrl, // URLをIDとして使用
+    title: outputEvent.eventTitle,
+    image: '/placeholder.svg', // デフォルトの画像を使用
+    date: `${outputEvent.eventStartDate} - ${outputEvent.eventEndDate}`,
+    location: outputEvent.locationName,
+    distance: '計算中...', // 距離は後で計算
+    price: `大人: ${outputEvent.priceInfo.adult}円, 子供: ${outputEvent.priceInfo.child}円`,
+    ageRange: outputEvent.ageRestriction,
+    categories: [], // カテゴリーは後で追加
+    description: outputEvent.eventDescription,
+  };
+};
 
 export default function SearchContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -15,16 +30,31 @@ export default function SearchContainer() {
   >(null);
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
+  const [searchResults, setSearchResults] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const events = activeTab === 'weekend' ? weekendEvents : customEvents;
+  const events = activeTab === 'weekend' ? searchResults : searchResults;
 
   const currentEvent = events.length > 0 ? events[currentIndex] : null;
 
   useEffect(() => {
     setCurrentIndex(0);
+  }, []);
+
+  useEffect(() => {
     async function fetchSearchResult() {
-      const result = await searchGrounding();
-      console.log('🚀  fetchSearchResult  result.data:', result.data);
+      setIsLoading(true);
+      try {
+        const result = await searchGrounding();
+        if (result.success && result.data) {
+          const convertedEvents = result.data.map(convertOutputEventToEvent);
+          setSearchResults(convertedEvents);
+        }
+      } catch (error) {
+        console.error('イベント検索中にエラーが発生しました:', error);
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchSearchResult();
   }, []);
@@ -102,7 +132,16 @@ export default function SearchContainer() {
       </header>
 
       <main className='flex-grow flex justify-center items-center px-2 py-0.5 overflow-hidden'>
-        {currentEvent ? (
+        {isLoading ? (
+          <div className='flex flex-col items-center justify-center space-y-4'>
+            <motion.div
+              className='w-16 h-16 border-4 border-[#FFD700] border-t-transparent rounded-full'
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+            />
+            <p className='text-[#808080] font-medium'>イベントを検索中...</p>
+          </div>
+        ) : currentEvent ? (
           <AnimatePresence initial={false}>
             <motion.div
               key={currentEvent.id}
@@ -176,6 +215,9 @@ export default function SearchContainer() {
                     </span>
                   ))}
                 </div>
+                <div className='text-sm text-[#595959] line-clamp-3'>
+                  {currentEvent.description}
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -193,14 +235,14 @@ export default function SearchContainer() {
         <button
           className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#FF3B30] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#FFEEEE] focus:outline-none focus:ring-2 focus:ring-[#FF3B30] focus:ring-opacity-50'
           onClick={() => handleSwipe('left')}
-          disabled={!currentEvent}
+          disabled={!currentEvent || isLoading}
         >
           <X className='w-6 h-6' />
         </button>
         <button
           className='w-auto h-16 px-6 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50'
           onClick={() => handleSwipe('down')}
-          disabled={!currentEvent}
+          disabled={!currentEvent || isLoading}
         >
           <Star className='w-6 h-6 mr-2 fill-current' />
           ココいく！
@@ -208,7 +250,7 @@ export default function SearchContainer() {
         <button
           className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#34C759] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#EEFFF5] focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:ring-opacity-50'
           onClick={() => handleSwipe('right')}
-          disabled={!currentEvent}
+          disabled={!currentEvent || isLoading}
         >
           <Check className='w-6 h-6' />
         </button>
