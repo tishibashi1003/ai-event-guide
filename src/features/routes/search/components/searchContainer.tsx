@@ -7,6 +7,7 @@ import { type OutputEvent, type Event } from '@/features/routes/search/type';
 import EventDetail from '../../eventDetail/components/event-detail';
 import { searchGrounding } from '../serverActions/genkit';
 import Image from 'next/image';
+import GoldenSmoothLoopingCuteSearchAnimation from './searchLoading';
 
 const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
   return {
@@ -104,9 +105,6 @@ export default function SearchContainer() {
   return (
     <div className='flex flex-col h-screen bg-gradient-to-b from-[#FFFDF0] to-white'>
       <header className='flex flex-col items-center justify-between p-4 bg-white shadow-md'>
-        <h1 className='text-2xl font-bold text-[#FFD700] mb-4 tracking-wide'>
-          イベントを探す
-        </h1>
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
             className={`flex-1 py-2 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -134,12 +132,7 @@ export default function SearchContainer() {
       <main className='flex-grow flex justify-center items-center px-2 py-0.5 overflow-hidden'>
         {isLoading ? (
           <div className='flex flex-col items-center justify-center space-y-4'>
-            <motion.div
-              className='w-16 h-16 border-4 border-[#FFD700] border-t-transparent rounded-full'
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            />
-            <p className='text-[#808080] font-medium'>イベントを検索中...</p>
+            <GoldenSmoothLoopingCuteSearchAnimation />
           </div>
         ) : currentEvent ? (
           <AnimatePresence initial={false}>
