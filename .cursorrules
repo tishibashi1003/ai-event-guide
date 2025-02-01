@@ -154,17 +154,15 @@ src/
 │   │   └── feature-name/
 │   │       ├── components/  ... UIコンポーネント
 │   │       ├── hooks.ts     ... カスタムフック
-│   │       ├── prompts/ ... プロンプト
-│   │       ├── utils/ ... ユーティリティ
 │   │       ├── serverActions/ ... サーバーサイドのロジック
+│   │       ├── prompts/ ... プロンプト
 │   │       └── type.ts      ... 型定義
 │   └── routes/   ... 特定のページで使うもの
 │       └── feature-name/
 │           ├── components/  ... UIコンポーネント
+│           ├── hooks.ts     ... カスタムフック
 │           ├── serverActions/ ... サーバーサイドのロジック
 │           ├── prompts/ ... プロンプト
-│           ├── utils/ ... ユーティリティ
-│           ├── hooks.ts     ... カスタムフック
 │           └── type.ts      ... 型定義
 ├── components/   ... ロジックがない共通コンポーネント
 ├── hooks/        ... 共通ロジックの内、React Hooksがあるもの
@@ -172,7 +170,7 @@ src/
 ├── types/        ... パッケージで不足しているような型定義
 └── constants/    ... 定数を定義したファイル
 
-※ lib, libs ディレクトリは作成しないでください。
+※ lib ディレクトリは作成しないでください。
 
 ```
 
