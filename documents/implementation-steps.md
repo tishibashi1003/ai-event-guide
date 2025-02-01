@@ -13,7 +13,7 @@ cd ai-event-guide
 yarn create next-app . --typescript --tailwind --eslint
 
 # 必要なパッケージのインストール
-yarn add @apollo/client graphql firebase @firebase/auth
+yarn add firebase @firebase/auth
 yarn add @google-cloud/aiplatform
 yarn add @genkit-ai/googleai genkit
 yarn add @heroicons/react @headlessui/react
@@ -25,9 +25,27 @@ yarn add react-swipeable react-map-gl
 1. Firebase コンソールでプロジェクトを作成
 2. Authentication 設定
    - Google 認証の有効化
-3. Firebase Data Connect の設定
-   - PostgreSQL インスタンスの作成
-   - スキーマの設定
+3. Firestore の設定
+   - データベースの作成
+   - セキュリティルールの設定
+   - ベクトル検索インデックスの作成
+
+```javascript
+// firestore.indexes.json
+{
+  "indexes": [],
+  "fieldOverrides": [],
+  "vectorConfigs": [
+    {
+      "name": "vector-search-config",
+      "dimension": 1536,
+      "metric": "COSINE",
+      "type": "FLOAT32",
+      "collections": ["swiped_events", "user_preference_vectors"]
+    }
+  ]
+}
+```
 
 ### 1.3 Google Cloud 設定
 
@@ -86,10 +104,20 @@ yarn add react-swipeable react-map-gl
 import { gemini15Flash, googleAI } from '@genkit-ai/googleai';
 import { genkit } from 'genkit';
 import { GeminiService } from './gemini';
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  where,
+  writeBatch,
+  doc,
+} from 'firebase/firestore';
 
 export class EventCollector {
   private geminiService: GeminiService;
   private ai: any;
+  private db: any;
 
   constructor() {
     this.geminiService = new GeminiService();
@@ -97,6 +125,7 @@ export class EventCollector {
       plugins: [googleAI()],
       model: gemini15Flash,
     });
+    this.db = getFirestore();
   }
 
   async collectAndProcessEvents() {
@@ -111,7 +140,7 @@ export class EventCollector {
       structuredEvents
     );
 
-    // 4. データベースへの保存
+    // 4. Firestoreへの保存
     await this.saveEvents(eventsWithEmbeddings);
   }
 
@@ -178,195 +207,122 @@ export class EventCollector {
   }
 
   private async saveEvents(events: any[]) {
-    // Firebase Data Connect の GraphQL API を使用してイベントを保存
-    const mutation = `
-      mutation CreateEvents($events: [EventInput!]!) {
-        createEvents(input: $events) {
-          id
-        }
-      }
-    `;
-    // GraphQL クライアントを使用して保存処理を実装
+    const batch = writeBatch(this.db);
+    const eventsCollection = collection(this.db, 'swiped_events');
+
+    events.forEach((event) => {
+      const docRef = doc(eventsCollection);
+      batch.set(docRef, {
+        ...event,
+        created_at: new Date(),
+      });
+    });
+
+    await batch.commit();
   }
 }
 ```
 
-### 2.2 Firebase Data Connect の設定
+### 2.2 ベクトル検索の実装
 
-1. Cloud SQL for PostgreSQL のセットアップ
+```typescript
+// src/lib/search/vectorSearch.ts
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  orderBy,
+  limit,
+  getDocs,
+  doc,
+  setDoc,
+  Timestamp,
+} from 'firebase/firestore';
 
-```sql
--- pgvector拡張機能の有効化
-CREATE EXTENSION IF NOT EXISTS vector;
+export class VectorSearch {
+  private db: any;
 
--- インデックスの作成（コサイン類似度による高速な検索のため）
-CREATE INDEX events_embedding_vector_idx ON events
-USING ivfflat (embedding_vector vector_cosine_ops)
-WITH (lists = 100);
+  constructor() {
+    this.db = getFirestore();
+  }
 
--- 類似イベント検索のクエリ例
-WITH user_liked_categories AS (
-  -- 直近30日間でユーザーがいいねしたカテゴリを取得
-  SELECT DISTINCT category
-  FROM swiped_events
-  WHERE user_id = :user_id
-    AND interaction_type = 'like'
-    AND created_at > NOW() - INTERVAL '30 days'
-  GROUP BY category
-  HAVING COUNT(*) > 0
-)
-SELECT
-  e.*,
-  (
-    e.embedding_vector <=> :user_preference_vector
-  ) * 0.7 + -- ベクトル類似度の重み（70%）
-  (
-    CASE
-      WHEN e.category IN (SELECT category FROM user_liked_categories) THEN 0.3
-      ELSE 0
-    END
-  ) as weighted_score -- カテゴリマッチの重み（30%）
-FROM events e
-ORDER BY weighted_score DESC
-LIMIT 10;
-```
+  async findSimilarEvents(userPreferenceVector: number[], limit: number = 10) {
+    const eventsRef = collection(this.db, 'swiped_events');
 
-2. GraphQL スキーマの定義
+    const vectorQuery = eventsRef.findNearest({
+      vectorField: 'embedding_vector',
+      queryVector: userPreferenceVector,
+      limit,
+      distanceMeasure: 'COSINE',
+    });
 
-```graphql
-type Event {
-  id: ID!
-  title: String!
-  description: String!
-  start_date: DateTime!
-  end_date: DateTime!
-  location_name: String!
-  latitude: Float!
-  longitude: Float!
-  price_info: JSON!
-  age_restriction: String
-  tags: [String!]!
-  embedding_vector: [Float!]!
-  created_at: DateTime!
+    const snapshot = await vectorQuery.get();
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+  }
+
+  async findRecommendedEvents(userId: string, limit: number = 10) {
+    // 1. ユーザーの好みベクトルを取得
+    const userVectorRef = doc(this.db, 'user_preference_vectors', userId);
+    const userVectorDoc = await userVectorRef.get();
+    const userVector = userVectorDoc.data()?.preference_vector;
+
+    if (!userVector) {
+      throw new Error('User preference vector not found');
+    }
+
+    // 2. 直近30日間でいいねしたカテゴリを取得
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const likedEventsQuery = query(
+      collection(this.db, 'swiped_events'),
+      where('user_id', '==', userId),
+      where('interaction_type', '==', 'like'),
+      where('created_at', '>=', Timestamp.fromDate(thirtyDaysAgo))
+    );
+
+    const likedEventsSnapshot = await getDocs(likedEventsQuery);
+    const likedCategories = new Set(
+      likedEventsSnapshot.docs.map((doc) => doc.data().category)
+    );
+
+    // 3. ベクトル検索で類似イベントを取得
+    const similarEvents = await this.findSimilarEvents(userVector, limit * 2);
+
+    // 4. スコアの計算と並び替え
+    const scoredEvents = similarEvents.map((event) => {
+      const categoryBonus = likedCategories.has(event.category) ? 0.3 : 0;
+      const vectorScore = 1 - event.distance; // distanceを類似度スコアに変換
+      const totalScore = vectorScore * 0.7 + categoryBonus;
+
+      return {
+        ...event,
+        score: totalScore,
+      };
+    });
+
+    // スコアで降順ソートして上位limit件を返す
+    return scoredEvents.sort((a, b) => b.score - a.score).slice(0, limit);
+  }
+
+  async updateUserPreferenceVector(userId: string, newVector: number[]) {
+    const vectorRef = doc(this.db, 'user_preference_vectors', userId);
+
+    await setDoc(
+      vectorRef,
+      {
+        user_id: userId,
+        preference_vector: newVector,
+        updated_at: new Date(),
+      },
+      { merge: true }
+    );
+  }
 }
-
-input EventInput {
-  title: String!
-  description: String!
-  start_date: DateTime!
-  end_date: DateTime!
-  location_name: String!
-  latitude: Float!
-  longitude: Float!
-  price_info: JSON!
-  age_restriction: String
-  tags: [String!]!
-  embedding_vector: [Float!]!
-}
-
-type Query {
-  events(first: Int!, after: String): EventConnection!
-  event(id: ID!): Event
-  similarEvents(eventId: ID!, first: Int!): [Event!]!
-  recommendedEvents(userId: ID!, first: Int!): [Event!]!
-}
-
-type Mutation {
-  createEvent(input: EventInput!): Event!
-  updateEvent(id: ID!, input: EventInput!): Event!
-  deleteEvent(id: ID!): Boolean!
-}
-```
-
-### 2.3 データベーススキーマ設定
-
-```sql
--- ユーザーテーブル
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  firebase_uid VARCHAR(128),
-  display_name VARCHAR(100),
-  email VARCHAR(255),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  last_login TIMESTAMP
-);
-
--- スワイプしたイベントテーブル
-CREATE TABLE swiped_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  event_source_id VARCHAR(255),
-  user_id UUID,
-  title VARCHAR(255),
-  description TEXT,
-  start_date TIMESTAMP,
-  end_date TIMESTAMP,
-  address VARCHAR(255),
-  travel_time_car INTEGER,
-  image_url VARCHAR(255),
-  category VARCHAR(50),
-  target_age VARCHAR(50),
-  price_range VARCHAR(50),
-  embedding_vector vector(1536),
-  interaction_type VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- 保存済みイベントテーブル
-CREATE TABLE saved_events (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  event_id UUID,
-  save_type VARCHAR(20),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (event_id) REFERENCES swiped_events(id)
-);
-
--- ユーザー設定テーブル
-CREATE TABLE user_preferences (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  preferred_categories TEXT[],
-  postal_code VARCHAR(8),
-  prefecture VARCHAR(20),
-  city VARCHAR(50),
-  price_preference VARCHAR(50),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- ユーザーの好みベクトルテーブル
-CREATE TABLE user_preference_vectors (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID,
-  preference_vector vector(1536),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- インデックスの作成
-CREATE UNIQUE INDEX users_firebase_uid_idx ON users(firebase_uid);
-CREATE UNIQUE INDEX users_email_idx ON users(email);
-CREATE INDEX swiped_events_user_id_idx ON swiped_events(user_id);
-CREATE INDEX swiped_events_event_source_id_idx ON swiped_events(event_source_id);
-CREATE INDEX swiped_events_start_date_idx ON swiped_events(start_date);
-CREATE INDEX saved_events_user_event_idx ON saved_events(user_id, event_id);
-CREATE INDEX saved_events_save_type_idx ON saved_events(save_type);
-CREATE UNIQUE INDEX user_preference_vectors_user_id_idx ON user_preference_vectors(user_id);
-
--- ベクトル検索用インデックス（初期設定）
-CREATE INDEX swiped_events_embedding_vector_idx ON swiped_events
-USING ivfflat (embedding_vector vector_cosine_ops)
-WITH (lists = 100);
-
-CREATE INDEX user_preference_vectors_vector_idx ON user_preference_vectors
-USING ivfflat (preference_vector vector_cosine_ops)
-WITH (lists = 100);
 ```
 
 ### 2.4 AI 実装（Gemini API）
@@ -616,81 +572,193 @@ export async function POST(req: Request) {
 }
 ```
 
+### 2.3 Firestore セキュリティルールの設定
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ユーザー認証のヘルパー関数
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 自分のデータかどうかをチェック
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ユーザー情報
+    match /users/{userId} {
+      allow read: if isAuthenticated() && isOwner(userId);
+      allow write: if isAuthenticated() && isOwner(userId);
+    }
+
+    // スワイプしたイベント
+    match /swiped_events/{eventId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.user_id);
+      allow update: if isAuthenticated() && isOwner(resource.data.user_id);
+    }
+
+    // 保存済みイベント
+    match /saved_events/{savedId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow create: if isAuthenticated() && isOwner(request.resource.data.user_id);
+      allow delete: if isAuthenticated() && isOwner(resource.data.user_id);
+    }
+
+    // ユーザー設定
+    match /user_preferences/{prefId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow write: if isAuthenticated() && isOwner(request.resource.data.user_id);
+    }
+
+    // ユーザーの好みベクトル
+    match /user_preference_vectors/{vectorId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.user_id);
+      allow write: if isAuthenticated() && isOwner(request.resource.data.user_id);
+    }
+  }
+}
+```
+
 ## 3. フロントエンド実装
 
-### 3.1 ディレクトリ構造
-
-```
-src/
-├── app/
-│   ├── page.tsx
-│   ├── explore/
-│   │   └── page.tsx
-│   ├── saved/
-│   │   └── page.tsx
-│   ├── events/
-│   │   └── [id]/
-│   │       └── page.tsx
-│   └── settings/
-│       └── page.tsx
-├── components/
-│   ├── EventCard.tsx
-│   ├── SwipeContainer.tsx
-│   ├── EventDetails.tsx
-│   └── Map.tsx
-├── lib/
-│   ├── ai/
-│   │   └── gemini.ts
-│   ├── firebase/
-│   │   └── client.ts
-│   └── apollo/
-│       └── client.ts
-└── types/
-    └── index.ts
-```
-
-### 3.2 主要コンポーネント実装
+### 3.1 Firebase 初期化
 
 ```typescript
-// src/components/EventCard.tsx
-import { useState } from 'react';
-import { motion, PanInfo } from 'framer-motion';
+// src/lib/firebase/config.ts
+import { initializeApp, getApps } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
-interface EventCardProps {
-  event: Event;
-  onSwipe: (direction: 'left' | 'right') => void;
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+// Firebase の初期化
+export const initializeFirebase = () => {
+  if (!getApps().length) {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    return { app, db, auth };
+  }
+  return null;
+};
+```
+
+### 3.2 認証コンテキストの実装
+
+```typescript
+// src/contexts/AuthContext.tsx
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+  User,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-export const EventCard: React.FC<EventCardProps> = ({ event, onSwipe }) => {
-  const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(
-    null
-  );
+const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
-  const handleDragEnd = (e: MouseEvent, info: PanInfo) => {
-    const threshold = 100;
-    if (Math.abs(info.offset.x) > threshold) {
-      onSwipe(info.offset.x > 0 ? 'right' : 'left');
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const auth = getAuth();
+  const db = getFirestore();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        // ユーザー情報をFirestoreに保存
+        const userRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (!userDoc.exists()) {
+          await setDoc(userRef, {
+            firebase_uid: user.uid,
+            display_name: user.displayName,
+            email: user.email,
+            created_at: new Date(),
+            updated_at: new Date(),
+            last_login: new Date(),
+          });
+        } else {
+          await setDoc(
+            userRef,
+            {
+              last_login: new Date(),
+              updated_at: new Date(),
+            },
+            { merge: true }
+          );
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth, db]);
+
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      console.error('Sign out error:', error);
+      throw error;
     }
   };
 
   return (
-    <motion.div
-      drag='x'
-      dragConstraints={{ left: 0, right: 0 }}
-      onDragEnd={handleDragEnd}
-      className='relative w-full h-[70vh] bg-white rounded-xl shadow-lg'
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signInWithGoogle,
+        signOut,
+      }}
     >
-      <div className='p-4'>
-        <h3 className='text-xl font-bold'>{event.title}</h3>
-        <p className='text-gray-600'>{event.description}</p>
-        <div className='mt-2'>
-          <p className='text-sm text-gray-500'>{event.location_name}</p>
-          <p className='text-sm text-gray-500'>
-            {new Date(event.event_date).toLocaleDateString('ja-JP')}
-          </p>
-        </div>
-      </div>
-    </motion.div>
+      {!loading && children}
+    </AuthContext.Provider>
   );
 };
 ```
