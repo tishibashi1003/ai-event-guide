@@ -1,5 +1,68 @@
 # Firestore データベース設計
 
+## コレクション階層構造
+
+```
+firestore/
+├── users/                    # ルートコレクション: ユーザー情報
+│   ├── {userId}/            # ユーザードキュメント（設定と好みベクトルを含む）
+│   │   └── interactions/    # サブコレクション: ユーザーのイベント操作履歴
+│   │       └── {interactionId}/
+└── events/                  # ルートコレクション: イベント情報
+    └── {eventId}/
+```
+
+### 階層構造の説明
+
+1. **users コレクション**
+
+   - ユーザー情報を管理するルートコレクション
+   - ユーザードキュメントに設定と好みベクトルを含む
+   - イベント操作履歴をサブコレクションとして管理
+
+2. **interactions サブコレクション**
+
+   - ユーザーのイベントに対する操作履歴を保存
+   - like/dislike/save/kokoniiku などの操作を記録
+   - 時系列での分析や推薦システムの学習に使用
+
+3. **events コレクション**
+   - グラウンディングで取得した全イベント情報を保存
+   - ベクトル検索に対応したインデックスを持つ
+   - バッチ処理による一括更新を前提とした設計
+
+### クエリパターン
+
+1. **イベント推薦時**
+
+```typescript
+// 1. ユーザー情報（好みベクトル含む）を取得
+const userDoc = await db.collection('users').doc(userId).get();
+
+// 2. ベクトル検索でイベントを取得
+const events = await db
+  .collection('events')
+  .where('status', '==', 'active')
+  .findNearest({
+    vectorField: 'embeddingVector',
+    queryVector: userDoc.data().preferenceVector,
+  })
+  .get();
+```
+
+2. **ユーザー操作履歴の取得**
+
+```typescript
+// 直近の操作履歴を取得
+const interactions = await db
+  .collection('users')
+  .doc(userId)
+  .collection('interactions')
+  .orderBy('createdAt', 'desc')
+  .limit(10)
+  .get();
+```
+
 ## コレクション構成
 
 ### users（ユーザー情報）
@@ -7,18 +70,26 @@
 ```typescript
 interface User {
   uid: string; // Firebase Auth UID
+  preferenceVector: number[]; // ユーザーの好み（最大2,048次元）
+  // ユーザー設定
+  preferredCategories: string[]; // 好みのカテゴリ
+  postalCode: string; // 郵便番号
+  prefecture: string; // 都道府県
+  city: string; // 市区町村
+  pricePreference: string; // 価格帯の設定
+  // タイムスタンプ
   createdAt: Timestamp; // 作成日時
   updatedAt: Timestamp; // 更新日時
+  lastVectorUpdateAt: Timestamp; // 好みベクトル最終更新日時
 }
 ```
 
-### swiped_events（スワイプしたイベント情報）
+### events（イベント情報）
 
 ```typescript
-interface SwipedEvent {
+interface Event {
   id: string; // Firestore Auto ID
-  eventSourceId: string; // 元イベントのソース ID
-  userId: string; // スワイプしたユーザー ID
+  eventSourceId: string; // 元イベントのソース ID（グラウンディング元での ID）
   title: string; // イベントタイトル
   description: string; // イベント説明
   startDate: Timestamp; // 開始日時
@@ -30,49 +101,22 @@ interface SwipedEvent {
   targetAge: string; // 対象年齢層
   priceRange: string; // 価格帯
   embeddingVector: number[]; // イベントの特徴ベクトル（最大2,048次元）
-  interactionType: 'like' | 'dislike' | 'save'; // 相互作用タイプ
+  status: 'active' | 'ended' | 'cancelled'; // イベントのステータス
+  source: string; // データソース（例: 'jalan', 'asoview' など）
   createdAt: Timestamp; // 作成日時
+  updatedAt: Timestamp; // 更新日時
 }
 ```
 
-### saved_events（保存済みイベント）
+### user_interactions（ユーザーのイベント操作履歴）
 
 ```typescript
-interface SavedEvent {
+interface UserInteraction {
   id: string; // Firestore Auto ID
   userId: string; // ユーザー ID
   eventId: string; // イベント ID
-  saveType: 'save' | 'kokoniiku'; // 保存タイプ
+  interactionType: 'like' | 'dislike' | 'save' | 'kokoniiku'; // 操作タイプ
   createdAt: Timestamp; // 作成日時
-  updatedAt: Timestamp; // 更新日時
-}
-```
-
-### user_preferences（ユーザー設定）
-
-```typescript
-interface UserPreference {
-  id: string; // Firestore Auto ID
-  userId: string; // ユーザー ID
-  preferredCategories: string[]; // 好みのカテゴリ
-  postalCode: string; // 郵便番号
-  prefecture: string; // 都道府県
-  city: string; // 市区町村
-  pricePreference: string; // 価格帯の設定
-  createdAt: Timestamp; // 作成日時
-  updatedAt: Timestamp; // 更新日時
-}
-```
-
-### user_preference_vectors（ユーザーの好みベクトル）
-
-```typescript
-interface UserPreferenceVector {
-  id: string; // Firestore Auto ID
-  userId: string; // ユーザー ID
-  preferenceVector: number[]; // ユーザーの好み（最大2,048次元）
-  createdAt: Timestamp; // 作成日時
-  updatedAt: Timestamp; // 更新日時
 }
 ```
 
@@ -81,9 +125,9 @@ interface UserPreferenceVector {
 ### ベクトル検索インデックス
 
 ```typescript
-// swiped_events コレクションのベクトル検索インデックス
+// events コレクションのベクトル検索インデックス
 {
-  collectionGroup: "swiped_events",
+  collectionGroup: "events",
   queryScope: "COLLECTION",
   fields: [
     {
@@ -93,17 +137,29 @@ interface UserPreferenceVector {
     }
   ]
 }
+```
 
-// user_preference_vectors コレクションのベクトル検索インデックス
+### 複合インデックス
+
+```typescript
+// イベント検索用インデックス
 {
-  collectionGroup: "user_preference_vectors",
+  collectionGroup: "events",
   queryScope: "COLLECTION",
   fields: [
-    {
-      fieldPath: "preferenceVector",
-      dimensions: 1536,
-      vectorSearchConfiguration: "vector-search-config"
-    }
+    { fieldPath: "status", order: "ASCENDING" },
+    { fieldPath: "startDate", order: "ASCENDING" }
+  ]
+}
+
+// ユーザー操作履歴用インデックス
+{
+  collectionGroup: "user_interactions",
+  queryScope: "COLLECTION",
+  fields: [
+    { fieldPath: "userId", order: "ASCENDING" },
+    { fieldPath: "interactionType", order: "ASCENDING" },
+    { fieldPath: "createdAt", order: "DESCENDING" }
   ]
 }
 ```
@@ -128,32 +184,19 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && isOwner(userId);
       allow write: if isAuthenticated() && isOwner(userId);
+
+      // ユーザー操作履歴
+      match /interactions/{interactionId} {
+        allow read: if isAuthenticated() && isOwner(userId);
+        allow create: if isAuthenticated() && isOwner(userId);
+        allow delete: if isAuthenticated() && isOwner(userId);
+      }
     }
 
-    // スワイプしたイベント
-    match /swiped_events/{eventId} {
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      allow update: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-
-    // 保存済みイベント
-    match /saved_events/{savedId} {
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
-      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
-    }
-
-    // ユーザー設定
-    match /user_preferences/{prefId} {
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      allow write: if isAuthenticated() && isOwner(request.resource.data.userId);
-    }
-
-    // ユーザーの好みベクトル
-    match /user_preference_vectors/{vectorId} {
-      allow read: if isAuthenticated() && isOwner(resource.data.userId);
-      allow write: if isAuthenticated() && isOwner(request.resource.data.userId);
+    // イベント情報
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // バッチ処理からのみ書き込み可能
     }
   }
 }
@@ -176,8 +219,8 @@ service cloud.firestore {
 3. イベントの有効期限管理
 
    - 開始日時・終了日時を使用
-   - 保存済みイベントの日付順表示
-   - 過去のイベント履歴の参照
+   - 終了したイベントは status を 'ended' に更新
+   - 過去のイベント履歴は分析用に保持
 
 4. 所要時間情報
    - 現在地からの車での所要時間を保存
