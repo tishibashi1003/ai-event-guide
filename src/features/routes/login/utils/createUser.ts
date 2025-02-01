@@ -1,6 +1,6 @@
+import { User } from '@/types/firestoreDocument';
 import { db } from '@/utils/firebase/config';
 import { doc, getDoc, setDoc, Timestamp, Firestore } from 'firebase/firestore';
-import { User } from '@/types/firestore';
 
 export const createUser = async (uid: string): Promise<void> => {
   const userRef = doc(db as Firestore, 'users', uid);
