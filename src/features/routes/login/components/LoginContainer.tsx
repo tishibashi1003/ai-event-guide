@@ -7,23 +7,22 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { createUser } from '@/features/common/auth/serverActions/createUser';
 
 export const LoginContainer = () => {
-  const { signInWithGoogle, user } = useAuth();
+  const { signInWithGoogle } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (user) {
-      router.push('/search');
-    }
-  }, [user, router]);
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithGoogle();
+      const result = await signInWithGoogle();
+
+      if (result?.user) {
+        await createUser(result.user.uid);
+        router.push('/search');
+      }
     } catch (error) {
-      console.error('ログインエラー:', error);
+      console.error('❌ Login error:', error);
     }
   };
 
