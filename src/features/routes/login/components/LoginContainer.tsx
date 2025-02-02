@@ -7,16 +7,28 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useFirestoreCollectionUpdate } from '@/hooks/useFirestore';
+import { Timestamp } from 'firebase/firestore';
+import type { User } from '@/types/firestoreDocument';
 
 export const LoginContainer = () => {
   const { signInWithGoogle } = useAuth();
   const router = useRouter();
+  const { add } = useFirestoreCollectionUpdate('users');
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithGoogle();
 
       if (result?.user) {
+        // ユーザードキュメントを作成
+        const userData: User = {
+          uid: result.user.uid,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
+        };
+
+        await add<User>(userData, result.user.uid);
         router.push('/search');
       }
     } catch (error) {
