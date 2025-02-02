@@ -19,11 +19,12 @@ export const EventSchema = z.object({
 
 export const UserSchema = z.object({
   uid: z.string(),
+  eventVector: z.array(z.number()).optional(),
   createdAt: z.instanceof(Timestamp),
   updatedAt: z.instanceof(Timestamp)
 });
 
-export const EventSwipeHistorySchema = z.object({
+export const EventInteractionHistorySchema = z.object({
   userId: z.string(),
   eventId: z.string(),
   action: z.enum(['like', 'dislike', 'kokoikku']),
@@ -33,4 +34,4 @@ export const EventSwipeHistorySchema = z.object({
 
 export type User = z.infer<typeof UserSchema>;
 export type Event = z.infer<typeof EventSchema>;
-export type EventSwipeHistory = z.infer<typeof EventSwipeHistorySchema>;
+export type EventInteractionHistory = z.infer<typeof EventInteractionHistorySchema>;
