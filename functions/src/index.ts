@@ -22,16 +22,23 @@ exports.scheduledGetEventFunction = onSchedule({
       model: gemini15Flash.withConfig({ googleSearchRetrieval: { disableAttribution: true } })
     });
 
+    // 日付範囲の計算
+    const today = new Date();
+    const after14Days = new Date(today);
+    after14Days.setDate(today.getDate() + 14); // 14日後
+
+    const formatDate = (date: Date) => {
+      return date.toISOString().split('T')[0]; // YYYY-MM-DD形式
+    };
 
     // 各都道府県のイベントを検索
     const prefectureEvents = await eventSearchPrompt(genkitInstance, {
       address: {
         prefecture: "岐阜県",
-        city: "垂井町",
       },
+      targetDate: formatDate(after14Days),
     });
     const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
-
 
     // イベント情報をFirestoreに保存
     const batch = db.batch();

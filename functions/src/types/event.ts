@@ -34,7 +34,7 @@ export type OutputEvent = z.infer<typeof OutputEventSchema>;
 
 export const AddressSchema = z.object({
   prefecture: z.string(),
-  city: z.string(),
+  // city: z.string().optional(),
 });
 
 export type Address = z.infer<typeof AddressSchema>;
