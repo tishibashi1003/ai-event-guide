@@ -2,26 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { type OutputEvent } from '@/features/routes/search/type';
-import { searchGrounding } from '../serverActions/genkit';
 import SearchLoading from './searchLoading';
 import { type Event } from '@/features/common/event/type';
 import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
-
-const convertOutputEventToEvent = (outputEvent: OutputEvent): Event => {
-  return {
-    id: outputEvent.sourceUrl + outputEvent.eventTitle, // URLをIDとして使用
-    title: outputEvent.eventTitle,
-    emoji: outputEvent.eventEmoji,
-    date: `${outputEvent.eventStartDate} - ${outputEvent.eventEndDate}`,
-    location: outputEvent.locationName,
-    price: `大人: ${outputEvent.priceInfo.adult}円, 子供: ${outputEvent.priceInfo.child}円`,
-    ageRange: outputEvent.ageRestriction,
-    category: outputEvent.eventCategory,
-    description: outputEvent.eventDescription,
-  };
-};
 
 export default function SearchContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,11 +27,6 @@ export default function SearchContainer() {
     async function fetchSearchResult() {
       setIsLoading(true);
       try {
-        const result = await searchGrounding();
-        if (result.success && result.data) {
-          const convertedEvents = result.data.map(convertOutputEventToEvent);
-          setSearchResults(convertedEvents);
-        }
       } catch (error) {
         console.error('イベント検索中にエラーが発生しました:', error);
       } finally {
