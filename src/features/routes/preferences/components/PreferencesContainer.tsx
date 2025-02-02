@@ -6,180 +6,41 @@ import { motion } from 'framer-motion';
 import { Event } from '@/types/firestoreDocument';
 import { Timestamp } from 'firebase/firestore';
 import CardStack from './CardStack';
-const SAMPLE_EVENTS: Event[] = [
-  {
-    id: '1',
-    eventVector: [1, 2, 3],
-    eventTitleJa: '夏祭り花火大会',
-    eventDescriptionJa: '夏祭り花火大会の説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: '夏祭り花火大会の場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '2',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '3',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '4',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '5',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '6',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '7',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '8',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '9',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '10',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-  {
-    id: '11',
-    eventVector: [1, 2, 3],
-    eventTitleJa: 'ロックフェスティバル',
-    eventDescriptionJa: 'ロックフェスティバルの説明',
-    eventDateYYYYMMDD: '2025-01-01',
-    eventLocationNameJa: 'ロックフェスティバルの場所',
-    eventLocationCity: '東京都',
-    eventSourceUrl: 'https://example.com',
-    eventEmoji: '🎉',
-    eventCategoryEn: 'event',
-    eventDate: Timestamp.now(),
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now(),
-  },
-];
+import { useFirestoreCollection } from '@/hooks/useFirestore';
+import { Loading } from '@/components/ui/loading';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const {
+    data: events,
+    error,
+    isLoading,
+  } = useFirestoreCollection<Event>('events');
 
-  const progress = (currentIndex / SAMPLE_EVENTS.length) * 100;
+  if (isLoading) {
+    return <Loading />;
+  }
 
-  if (currentIndex >= SAMPLE_EVENTS.length) {
+  if (error) {
+    return (
+      <div className='flex flex-col items-center justify-center h-full'>
+        <p>エラーが発生しました。</p>
+        <p>{error.message}</p>
+      </div>
+    );
+  }
+
+  if (!events || events.length === 0) {
+    return (
+      <div className='flex flex-col items-center justify-center h-full'>
+        <p>イベントが見つかりませんでした。</p>
+      </div>
+    );
+  }
+
+  const progress = (currentIndex / events.length) * 100;
+
+  if (currentIndex >= events.length) {
     return (
       <div className='flex flex-col items-center justify-center h-full'>
         <h2 className='text-2xl font-bold mb-4'>ありがとうございます！</h2>
@@ -211,12 +72,12 @@ export function PreferencesContainer() {
           教えてください！
         </h2>
         <p className='text-sm text-gray-600 mt-2'>
-          {currentIndex + 1} / {SAMPLE_EVENTS.length}
+          {currentIndex + 1} / {events.length}
         </p>
       </div>
 
       <CardStack
-        events={SAMPLE_EVENTS}
+        events={events}
         onIndexChange={setCurrentIndex}
         currentIndex={currentIndex}
       />
