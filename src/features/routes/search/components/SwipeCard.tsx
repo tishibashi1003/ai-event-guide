@@ -7,7 +7,7 @@ import {
   useTransform,
   useAnimation,
 } from 'framer-motion';
-import { type Event } from '@/features/common/event/type';
+import { Event } from '@/types/firestoreDocument';
 import { Calendar, Users } from 'lucide-react';
 interface SwipeCardProps {
   event: Event;
@@ -69,27 +69,29 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
     >
       <div className='bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100 h-40 flex items-center justify-center relative'>
         <div className='text-center p-4 z-10'>
-          <span className='text-5xl'>{event.emoji}</span>
+          <span className='text-5xl'>{event.eventEmoji}</span>
           <p className='mt-3 font-medium text-yellow-800 text-md'>
-            {event.category}
+            {event.eventCategoryEn}
           </p>
         </div>
       </div>
 
       <div className='p-6 space-y-4 bg-white'>
-        <h2 className='text-xl font-bold text-gray-800'>{event.title}</h2>
+        <h2 className='text-xl font-bold text-gray-800'>
+          {event.eventTitleJa}
+        </h2>
 
         <div className='flex items-center text-gray-600'>
           <Calendar className='w-5 h-5 mr-2 text-yellow-500' />
-          <span>{event.date}</span>
+          <span>{event.eventDateYYYYMMDD}</span>
         </div>
 
         <div className='flex items-center text-gray-600'>
           <Users className='w-5 h-5 mr-2 text-yellow-500' />
-          <span>{event.price}</span>
+          <span>{event.eventLocationCity}</span>
         </div>
 
-        <p className='text-gray-700 line-clamp-3'>{event.description}</p>
+        <p className='text-gray-700 line-clamp-3'>{event.eventDescriptionJa}</p>
       </div>
     </motion.div>
   );

@@ -6,12 +6,44 @@ import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
+import { Timestamp } from 'firebase/firestore';
 
 export default function SearchContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
-  const [searchResults, setSearchResults] = useState<Event[]>([]);
+  const [searchResults, setSearchResults] = useState<Event[]>([
+    {
+      id: '1',
+      eventVector: [1, 2, 3],
+      eventTitleJa: 'イベントタイトル',
+      eventDescriptionJa: 'イベント詳細',
+      eventDateYYYYMMDD: '2025-01-01',
+      eventLocationNameJa: 'イベント場所',
+      eventLocationCity: 'イベント場所',
+      eventSourceUrl: 'https://example.com',
+      eventEmoji: '🎉',
+      eventCategoryEn: 'event',
+      eventDate: Timestamp.now(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    },
+    {
+      id: '2',
+      eventVector: [4, 5, 6],
+      eventTitleJa: 'イベントタイトル2',
+      eventDescriptionJa: 'イベント詳細2',
+      eventDateYYYYMMDD: '2025-01-02',
+      eventLocationNameJa: 'イベント場所2',
+      eventLocationCity: 'イベント場所2',
+      eventSourceUrl: 'https://example.com',
+      eventEmoji: '🎉',
+      eventCategoryEn: 'event',
+      eventDate: Timestamp.now(),
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
 
   const events = activeTab === 'weekend' ? searchResults : searchResults;

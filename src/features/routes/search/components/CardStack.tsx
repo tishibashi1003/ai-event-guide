@@ -2,8 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { X, Star, Check } from 'lucide-react';
 import SwipeCard from './SwipeCard';
-import { type Event } from '@/features/common/event/type';
-
+import { Event } from '@/types/firestoreDocument';
 interface CardStackProps {
   events: Event[];
 }
