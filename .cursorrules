@@ -156,6 +156,7 @@ src/
 │   │       ├── hooks.ts     ... カスタムフック
 │   │       ├── serverActions/ ... サーバーサイドのロジック
 │   │       ├── prompts/ ... プロンプト
+│   │       └── utils/ ... ユーティリティ
 │   │       └── type.ts      ... 型定義
 │   └── routes/   ... 特定のページで使うもの
 │       └── feature-name/
@@ -163,6 +164,7 @@ src/
 │           ├── hooks.ts     ... カスタムフック
 │           ├── serverActions/ ... サーバーサイドのロジック
 │           ├── prompts/ ... プロンプト
+│           └── utils/ ... ユーティリティ
 │           └── type.ts      ... 型定義
 ├── components/   ... ロジックがない共通コンポーネント
 ├── hooks/        ... 共通ロジックの内、React Hooksがあるもの
@@ -211,6 +213,9 @@ src/
 1. `constants/` → `utils/` → `components/`
 2. `features/common/` → `features/routes/`
 3. `features/` → `app/`
+
+### コーディングルール
+ここに指示のある内容以外のコーディング規約等をユーザーから指示された場合は、追記をするか都度聞いて下さい。
 
 ---
 
