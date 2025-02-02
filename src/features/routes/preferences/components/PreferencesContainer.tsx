@@ -1,22 +1,91 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Event } from '@/types/firestoreDocument';
-import { Timestamp } from 'firebase/firestore';
+import { Event, EventInteractionHistory } from '@/types/firestoreDocument';
 import CardStack from './CardStack';
-import { useFirestoreCollection } from '@/hooks/useFirestore';
+import {
+  useFirestoreCollection,
+  useFirestoreUpdate,
+  useFirestoreCollectionUpdate,
+} from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
 import { PreferenceCalculation } from './PreferenceCalculation';
+import { generateUserProfileVector } from '../utils/vector';
+import { useAuth } from '@/features/common/auth/AuthContext';
+import { useRouter } from 'next/navigation';
+import { Timestamp } from 'firebase/firestore';
+import { FieldValue } from '@google-cloud/firestore';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [interactionHistory, setInteractionHistory] = useState<
+    EventInteractionHistory[]
+  >([]);
+  const { user } = useAuth();
+  const router = useRouter();
+
   const {
     data: events,
     error,
     isLoading,
   } = useFirestoreCollection<Event>('events');
+
+  const { set: setUserData } = useFirestoreUpdate(
+    user ? `users/${user.uid}` : ''
+  );
+
+  const { add: addInteraction } = useFirestoreCollectionUpdate(
+    user ? `users/${user.uid}/eventInteractionHistories` : ''
+  );
+
+  const handleSwipe = async (direction: 'left' | 'right') => {
+    if (!events || currentIndex >= events.length || !user) return;
+
+    const event = events[currentIndex];
+    const action = direction === 'right' ? 'like' : 'dislike';
+
+    const newHistory: EventInteractionHistory = {
+      userId: user.uid,
+      eventId: event.id,
+      eventVector: event.eventVector,
+      action,
+      timestamp: Timestamp.now(),
+    };
+    setInteractionHistory((prev) => [...prev, newHistory]);
+  };
+
+  const onCalculateAndSave = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const userVector = generateUserProfileVector(interactionHistory);
+
+      // ５秒待機
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      // await setUserData({
+      //   preferenceVector: FieldValue.vector(userVector),
+      //   updatedAt: Timestamp.now(),
+      // });
+
+      // for (const interaction of interactionHistory) {
+      //   await addInteraction(interaction);
+      // }
+
+      router.push('/search');
+    } catch (error) {
+      console.error('Error saving user preferences:', error);
+    }
+  }, [interactionHistory, user, router]);
+
+  useEffect(() => {
+    console.log('🚀  useEffect  events?.length:', currentIndex, events?.length);
+    if (events && currentIndex >= (events?.length ?? 0)) {
+      onCalculateAndSave();
+    }
+  }, [currentIndex, events, onCalculateAndSave]);
 
   if (isLoading) {
     return <Loading />;
@@ -46,11 +115,8 @@ export function PreferencesContainer() {
       <div className='flex flex-col items-center justify-center h-full mt-8'>
         <PreferenceCalculation />
         <p className='text-center text-gray-600 my-8'>
-          あなたにぴったりなイベントを設定中...
+          あなたの好みを分析中...
         </p>
-        <Button className='bg-yellow-400 hover:bg-yellow-500 text-white'>
-          イベントを見る
-        </Button>
       </div>
     );
   }
@@ -81,6 +147,7 @@ export function PreferencesContainer() {
         events={events}
         onIndexChange={setCurrentIndex}
         currentIndex={currentIndex}
+        onSwipe={handleSwipe}
       />
     </div>
   );

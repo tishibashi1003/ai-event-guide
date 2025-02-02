@@ -8,18 +8,23 @@ interface CardStackProps {
   events: Event[];
   onIndexChange: (index: number) => void;
   currentIndex?: number;
+  onSwipe?: (direction: 'left' | 'right') => void;
 }
 
 const CardStack: React.FC<CardStackProps> = ({
   events,
   onIndexChange,
   currentIndex: externalIndex = 0,
+  onSwipe,
 }) => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(
     null
   );
 
   const handleSwipe = () => {
+    if (onSwipe && swipeDirection) {
+      onSwipe(swipeDirection);
+    }
     setSwipeDirection(null);
     onIndexChange(externalIndex + 1);
   };

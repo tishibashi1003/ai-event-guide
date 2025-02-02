@@ -1,6 +1,6 @@
 import { EventInteractionHistory } from "@/types/firestoreDocument";
 
-export const generateUserProfileVector = async (histories: EventInteractionHistory[]): Promise<number[]> => {
+export const generateUserProfileVector = (histories: EventInteractionHistory[]): number[] => {
   // 直近のN件の履歴を取得
   const recentHistories = histories
     .sort((a, b) => b.timestamp.seconds - a.timestamp.seconds)
