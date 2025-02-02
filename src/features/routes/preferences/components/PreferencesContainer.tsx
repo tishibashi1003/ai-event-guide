@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Event, EventInteractionHistory } from '@/types/firestoreDocument';
 import CardStack from './CardStack';
@@ -15,8 +14,7 @@ import { PreferenceCalculation } from './PreferenceCalculation';
 import { generateUserProfileVector } from '../utils/vector';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Timestamp } from 'firebase/firestore';
-import { FieldValue } from '@google-cloud/firestore';
+import { Timestamp, vector } from 'firebase/firestore';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,25 +58,31 @@ export function PreferencesContainer() {
     if (!user) return;
 
     try {
+      for (const history of interactionHistory) {
+        await addInteraction({
+          ...history,
+          eventVector: history.eventVector,
+          createdAt: Timestamp.now(),
+        });
+      }
+
+      // ユーザーの好みを計算
       const userVector = generateUserProfileVector(interactionHistory);
 
-      // ５秒待機
+      // ユーザーのベクトルを更新
+      await setUserData({
+        preferenceVector: vector(userVector),
+        updatedAt: Timestamp.now(),
+      });
+
+      // ５秒待機して分析中の演出を表示
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // await setUserData({
-      //   preferenceVector: FieldValue.vector(userVector),
-      //   updatedAt: Timestamp.now(),
-      // });
-
-      // for (const interaction of interactionHistory) {
-      //   await addInteraction(interaction);
-      // }
-
-      router.push('/search');
+      // router.push('/search');
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
-  }, [interactionHistory, user, router]);
+  }, [interactionHistory, user, router, setUserData, addInteraction]);
 
   useEffect(() => {
     console.log('🚀  useEffect  events?.length:', currentIndex, events?.length);

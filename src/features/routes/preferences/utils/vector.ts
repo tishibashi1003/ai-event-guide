@@ -1,14 +1,9 @@
 import { EventInteractionHistory } from "@/types/firestoreDocument";
+import { VectorValue } from "firebase/firestore";
 
 export const generateUserProfileVector = (histories: EventInteractionHistory[]): number[] => {
-  // 直近のN件の履歴を取得
-  const recentHistories = histories
-    .sort((a, b) => b.timestamp.seconds - a.timestamp.seconds)
-    .slice(0, 10);
-
   // イベントベクトルの重み付き平均を計算
-  // より最近の閲覧履歴と行動の種類によって重みを設定
-  const weightedVectors = recentHistories.map((history, index) => {
+  const weightedVectors = histories.map((history, index) => {
     let weight = 0;
     switch (history.action) {
       case 'like':
@@ -21,7 +16,8 @@ export const generateUserProfileVector = (histories: EventInteractionHistory[]):
         weight = 1 / (index + 1) * 1.5; // kokoikku は高めの重み
         break;
     }
-    return history.eventVector.map((v: number) => v * weight);
+    const vectorArray = history.eventVector as unknown as VectorValue;
+    return vectorArray.toArray().map((v: number) => v * weight);
   })
 
   // ベクトルの平均を計算
