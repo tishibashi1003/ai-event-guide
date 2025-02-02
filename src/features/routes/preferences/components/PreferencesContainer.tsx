@@ -226,10 +226,11 @@ export function PreferencesContainer() {
         </p>
       </div>
 
-      {SAMPLE_EVENTS.map(
-        (event, index) =>
-          index === currentIndex && <CardStack events={SAMPLE_EVENTS} />
-      )}
+      <CardStack
+        events={SAMPLE_EVENTS}
+        onIndexChange={setCurrentIndex}
+        currentIndex={currentIndex}
+      />
     </div>
   );
 }

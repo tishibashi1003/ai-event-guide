@@ -6,34 +6,39 @@ import SwipeCard from './SwipeCard';
 
 interface CardStackProps {
   events: Event[];
+  onIndexChange: (index: number) => void;
+  currentIndex?: number;
 }
 
-const CardStack: React.FC<CardStackProps> = ({ events }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+const CardStack: React.FC<CardStackProps> = ({
+  events,
+  onIndexChange,
+  currentIndex: externalIndex = 0,
+}) => {
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(
     null
   );
 
   const handleSwipe = () => {
     setSwipeDirection(null);
-    setCurrentIndex((prevIndex) => prevIndex + 1);
+    onIndexChange(externalIndex + 1);
   };
 
   const triggerSwipe = (direction: 'left' | 'right') => {
-    if (currentIndex < events.length) {
+    if (externalIndex < events.length) {
       setSwipeDirection(direction);
     }
   };
 
-  const isLastCard = currentIndex >= events.length;
+  const isLastCard = externalIndex >= events.length;
 
   return (
     <div className='relative w-full px-2'>
       <div className='relative h-[400px]'>
         {!isLastCard ? (
           <SwipeCard
-            key={currentIndex}
-            event={events[currentIndex]}
+            key={externalIndex}
+            event={events[externalIndex]}
             onSwipe={handleSwipe}
             swipeDirection={swipeDirection}
           />
