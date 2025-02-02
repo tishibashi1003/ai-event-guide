@@ -28,7 +28,10 @@ exports.scheduledGetEventFunction = onSchedule({
     after14Days.setDate(today.getDate() + 14); // 14日後
 
     const formatDate = (date: Date) => {
-      return date.toISOString().split('T')[0]; // YYYY-MM-DD形式
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${year}年${month}月${day}日`;
     };
 
     // 各都道府県のイベントを検索
@@ -49,8 +52,8 @@ exports.scheduledGetEventFunction = onSchedule({
       const docRef = eventsCollection.doc();
       batch.set(docRef, {
         ...event,
-        eventStartDateYYYYMMDD: convertYYYYMMDDToTimestamp(event.eventStartDateYYYYMMDD),
-        eventEndDateYYYYMMDD: convertYYYYMMDDToTimestamp(event.eventEndDateYYYYMMDD),
+        eventStartDate: convertYYYYMMDDToTimestamp(event.eventStartDateYYYYMMDD),
+        eventEndDate: convertYYYYMMDDToTimestamp(event.eventEndDateYYYYMMDD),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });

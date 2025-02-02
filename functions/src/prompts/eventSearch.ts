@@ -32,11 +32,12 @@ export const eventSearchPrompt = async (
         - 石橋プレミアムアウトレット
       - OK
         - 石橋プレミアムアウトレットで開催されるバレンタインデーイベント
+    - eventCategoryEn は英単語1語で返すこと
+      - 例)
+        - Art
 
     ## 検索条件
-    - {{prefecture}} のみ
-    - イベント対象期間
-      - {{targetDate}}
+    - {{prefecture}} {{targetDate}}
     `
   )(
     {

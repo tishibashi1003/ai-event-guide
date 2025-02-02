@@ -13,14 +13,14 @@ export const OutputEventSchema = z.object({
   /** イベントの終了日時（YYYY-MM-DD HH:mm:ss形式） */
   eventEndDateYYYYMMDD: z.string(),
   /** イベントの開催場所名 */
-  locationNameJa: z.string(),
+  eventLocationNameJa: z.string(),
   /** イベントの年齢制限（例: "18歳以上", "制限なし"など） */
-  ageRestriction: z.string(),
+  eventAgeRestriction: z.string(),
   /** イベントの料金情報 */
-  priceInfoAdult: z.number(),
-  priceInfoChild: z.number(),
+  eventPriceInfoAdult: z.number(),
+  eventPriceInfoChild: z.number(),
   /** イベントのURL */
-  sourceUrl: z.string(),
+  eventSourceUrl: z.string(),
   /** イベントのアイコン */
   eventEmoji: z.string(),
   /** イベントのカテゴリー */
