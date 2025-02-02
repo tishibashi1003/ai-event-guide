@@ -2,12 +2,10 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
-import CardStack from '@/features/common/swipe/components/CardStack';
 import { Event } from '@/types/firestoreDocument';
 import { Timestamp } from 'firebase/firestore';
-
+import CardStack from './CardStack';
 const SAMPLE_EVENTS: Event[] = [
   {
     id: '1',
@@ -178,15 +176,6 @@ const SAMPLE_EVENTS: Event[] = [
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [preferences, setPreferences] = useState<Record<number, boolean>>({});
-
-  const handleSwipe = (direction: 'left' | 'right') => {
-    setPreferences((prev) => ({
-      ...prev,
-      [currentIndex]: direction === 'right',
-    }));
-    setCurrentIndex((prev) => prev + 1);
-  };
 
   const progress = (currentIndex / SAMPLE_EVENTS.length) * 100;
 

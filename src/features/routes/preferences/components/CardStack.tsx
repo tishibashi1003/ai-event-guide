@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { X, Star, Check } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { Event } from '@/types/firestoreDocument';
 import SwipeCard from './SwipeCard';
 
