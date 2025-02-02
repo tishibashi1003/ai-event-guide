@@ -1,10 +1,11 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
 import { gemini15Flash } from "@genkit-ai/vertexai";
 import { eventSearchPrompt } from "./prompts/eventSearch";
 import { OutputEventSchema } from "./types/event";
+import { convertYYYYMMDDToTimestamp } from "./utils/date";
 
 initializeApp();
 
@@ -41,8 +42,10 @@ exports.scheduledGetEventFunction = onSchedule({
       const docRef = eventsCollection.doc();
       batch.set(docRef, {
         ...event,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        eventStartDateYYYYMMDD: convertYYYYMMDDToTimestamp(event.eventStartDateYYYYMMDD),
+        eventEndDateYYYYMMDD: convertYYYYMMDDToTimestamp(event.eventEndDateYYYYMMDD),
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       });
     });
 
