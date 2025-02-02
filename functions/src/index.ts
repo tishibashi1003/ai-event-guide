@@ -4,7 +4,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
 import { gemini15Flash, textEmbedding004 } from "@genkit-ai/vertexai";
 import { eventSearchPrompt } from "./prompts/eventSearch";
-import { OutputEventSchema } from "./types/event";
+import { Event, OutputEventSchema } from "./types/event";
 import { convertYYYYMMDDToTimestamp } from "./utils/date";
 
 initializeApp();
@@ -58,13 +58,18 @@ exports.scheduledGetEventFunction = onSchedule({
         content: eventText,
       });
 
-      batch.set(docRef, {
+      const eventData: Event = {
+        id: docRef.id,
         ...event,
         eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
+        // @ts-ignore vector が zod で定義されていないため
         eventVector: FieldValue.vector(vector),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
-      });
+      }
+
+
+      batch.set(docRef, eventData);
     }
 
     await batch.commit();

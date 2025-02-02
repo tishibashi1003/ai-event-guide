@@ -1,3 +1,4 @@
+import { Timestamp } from "firebase-admin/firestore";
 import { z } from "zod";
 
 /**
@@ -20,14 +21,22 @@ export const OutputEventSchema = z.object({
   eventEmoji: z.string(),
   /** イベントのカテゴリー */
   eventCategoryEn: z.string(),
-  /** イベントのベクトル表現 */
+});
+
+export const EventSchema = z.object({
+  id: z.string(),
   eventVector: z.array(z.number()),
+  ...OutputEventSchema.shape,
+  eventDate: z.instanceof(Timestamp),
+  createdAt: z.instanceof(Timestamp),
+  updatedAt: z.instanceof(Timestamp),
 });
 
 /**
  * 検索結果として返されるイベント情報の型
  */
 export type OutputEvent = z.infer<typeof OutputEventSchema>;
+export type Event = z.infer<typeof EventSchema>;
 
 export const AddressSchema = z.object({
   prefecture: z.string(),
