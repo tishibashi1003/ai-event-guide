@@ -4,7 +4,10 @@ import { initializeApp } from "firebase-admin/app";
 
 initializeApp();
 
-exports.scheduledGetEventFunction = onSchedule("0 0 * * *", async (event) => {
+exports.scheduledGetEventFunction = onSchedule({
+  schedule: "0 0 * * *",
+  region: "asia-northeast1"
+}, async (event) => {
   const db = getFirestore();
 
   try {

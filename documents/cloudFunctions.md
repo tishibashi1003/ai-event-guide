@@ -53,7 +53,7 @@ yarn build:watch
 ### 特定の関数のデプロイ
 
 ```bash
-firebase deploy --only functions:xxxx --region asia-northeast1
+firebase deploy --only functions:xxxx
 ```
 
 ### 全関数のデプロイ
