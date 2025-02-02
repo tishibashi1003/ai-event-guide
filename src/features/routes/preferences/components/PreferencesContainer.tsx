@@ -8,6 +8,7 @@ import { Timestamp } from 'firebase/firestore';
 import CardStack from './CardStack';
 import { useFirestoreCollection } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
+import { PreferenceCalculation } from './PreferenceCalculation';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,10 +43,10 @@ export function PreferencesContainer() {
 
   if (currentIndex >= events.length) {
     return (
-      <div className='flex flex-col items-center justify-center h-full'>
-        <h2 className='text-2xl font-bold mb-4'>ありがとうございます！</h2>
-        <p className='text-center mb-8'>
-          あなたの好みを元に、おすすめのイベントを表示します。
+      <div className='flex flex-col items-center justify-center h-full mt-8'>
+        <PreferenceCalculation />
+        <p className='text-center text-gray-600 my-8'>
+          あなたにぴったりなイベントを設定中...
         </p>
         <Button className='bg-yellow-400 hover:bg-yellow-500 text-white'>
           イベントを見る
