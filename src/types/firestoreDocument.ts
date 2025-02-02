@@ -1,28 +1,20 @@
 import { Timestamp } from 'firebase/firestore';
 import { z } from "zod";
 
-/**
- * 検索結果として返されるイベント情報の Zod スキーマ
- */
 export const EventSchema = z.object({
-  /** イベントのタイトル */
-  eventTitleJa: z.string(),
-  /** イベントの詳細説明 */
-  eventDescriptionJa: z.string(),
-  /** イベントの日時（YYYY-MM-DD HH:mm:ss形式） */
-  eventDateYYYYMMDD: z.string(),
-  /** イベントの開催場所名 */
-  eventLocationNameJa: z.string(),
-  /** イベントの開催場所の市区町村 */
-  eventLocationCity: z.string(),
-  /** イベントのURL */
-  eventSourceUrl: z.string(),
-  /** イベントのアイコン */
-  eventEmoji: z.string(),
-  /** イベントのカテゴリー */
-  eventCategoryEn: z.string(),
-  /** イベントのベクトル表現 */
+  id: z.string(),
   eventVector: z.array(z.number()),
+  eventTitleJa: z.string(),
+  eventDescriptionJa: z.string(),
+  eventDateYYYYMMDD: z.string(),
+  eventLocationNameJa: z.string(),
+  eventLocationCity: z.string(),
+  eventSourceUrl: z.string(),
+  eventEmoji: z.string(),
+  eventCategoryEn: z.string(),
+  eventDate: z.instanceof(Timestamp),
+  createdAt: z.instanceof(Timestamp),
+  updatedAt: z.instanceof(Timestamp),
 });
 
 export const UserSchema = z.object({

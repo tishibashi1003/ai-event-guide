@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { type OutputEvent } from '@/features/routes/search/type';
 import SearchLoading from './searchLoading';
-import { type Event } from '@/features/common/event/type';
 import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
+import { Event } from '@/types/firestoreDocument';
 
 export default function SearchContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
