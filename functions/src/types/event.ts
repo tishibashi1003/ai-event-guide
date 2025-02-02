@@ -1,39 +1,30 @@
 import { z } from "zod";
 
 /**
- * イベントの料金情報を表す Zod スキーマ
- */
-export const PriceInfoSchema = z.object({
-  /** 大人料金（円） */
-  adult: z.number(),
-  /** 子供料金（円） */
-  child: z.number(),
-});
-
-/**
  * 検索結果として返されるイベント情報の Zod スキーマ
  */
 export const OutputEventSchema = z.object({
   /** イベントのタイトル */
-  eventTitle: z.string(),
+  eventTitleJa: z.string(),
   /** イベントの詳細説明 */
-  eventDescription: z.string(),
+  eventDescriptionJa: z.string(),
   /** イベントの開始日時（YYYY-MM-DD HH:mm:ss形式） */
-  eventStartDate: z.string(),
+  eventStartDateYYYYMMDD: z.string(),
   /** イベントの終了日時（YYYY-MM-DD HH:mm:ss形式） */
-  eventEndDate: z.string(),
+  eventEndDateYYYYMMDD: z.string(),
   /** イベントの開催場所名 */
-  locationName: z.string(),
+  locationNameJa: z.string(),
   /** イベントの年齢制限（例: "18歳以上", "制限なし"など） */
   ageRestriction: z.string(),
   /** イベントの料金情報 */
-  priceInfo: PriceInfoSchema,
+  priceInfoAdult: z.number(),
+  priceInfoChild: z.number(),
   /** イベントのURL */
   sourceUrl: z.string(),
   /** イベントのアイコン */
   eventEmoji: z.string(),
   /** イベントのカテゴリー */
-  eventCategory: z.string(),
+  eventCategoryEn: z.string(),
 });
 
 /**
