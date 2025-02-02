@@ -8,23 +8,20 @@ export const OutputEventSchema = z.object({
   eventTitleJa: z.string(),
   /** イベントの詳細説明 */
   eventDescriptionJa: z.string(),
-  /** イベントの開始日時（YYYY-MM-DD HH:mm:ss形式） */
-  eventStartDateYYYYMMDD: z.string(),
-  /** イベントの終了日時（YYYY-MM-DD HH:mm:ss形式） */
-  eventEndDateYYYYMMDD: z.string(),
+  /** イベントの日時（YYYY-MM-DD HH:mm:ss形式） */
+  eventDateYYYYMMDD: z.string(),
   /** イベントの開催場所名 */
   eventLocationNameJa: z.string(),
-  /** イベントの年齢制限（例: "18歳以上", "制限なし"など） */
-  eventAgeRestriction: z.string(),
-  /** イベントの料金情報 */
-  eventPriceInfoAdult: z.number(),
-  eventPriceInfoChild: z.number(),
+  /** イベントの開催場所の市区町村 */
+  eventLocationCity: z.string(),
   /** イベントのURL */
   eventSourceUrl: z.string(),
   /** イベントのアイコン */
   eventEmoji: z.string(),
   /** イベントのカテゴリー */
   eventCategoryEn: z.string(),
+  /** イベントのベクトル表現 */
+  eventVector: z.array(z.number()),
 });
 
 /**

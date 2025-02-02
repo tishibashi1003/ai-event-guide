@@ -1,8 +1,8 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
-import { gemini15Flash } from "@genkit-ai/vertexai";
+import { gemini15Flash, textEmbedding004 } from "@genkit-ai/vertexai";
 import { eventSearchPrompt } from "./prompts/eventSearch";
 import { OutputEventSchema } from "./types/event";
 import { convertYYYYMMDDToTimestamp } from "./utils/date";
@@ -48,16 +48,24 @@ exports.scheduledGetEventFunction = onSchedule({
     const eventsCollection = db.collection("events");
 
     // 新しいイベントを追加
-    parsedEventResult.forEach((event) => {
+    for (const event of parsedEventResult) {
       const docRef = eventsCollection.doc();
+
+      // イベントの説明文からベクトルを生成
+      const eventText = `${event.eventTitleJa}\n${event.eventDescriptionJa}\n${event.eventLocationNameJa}\n${event.eventCategoryEn}\n${event.eventLocationCity}`;
+      const vector = await genkitInstance.embed({
+        embedder: textEmbedding004,
+        content: eventText,
+      });
+
       batch.set(docRef, {
         ...event,
-        eventStartDate: convertYYYYMMDDToTimestamp(event.eventStartDateYYYYMMDD),
-        eventEndDate: convertYYYYMMDDToTimestamp(event.eventEndDateYYYYMMDD),
+        eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
+        eventVector: FieldValue.vector(vector),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
-    });
+    }
 
     await batch.commit();
 
