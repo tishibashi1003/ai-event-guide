@@ -3,6 +3,8 @@ import { getFirestore } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
 import { gemini15Flash } from "@genkit-ai/vertexai";
+import { eventSearchPrompt } from "./prompts/eventSearch";
+import { OutputEventSchema } from "./types/event";
 
 initializeApp();
 
@@ -15,34 +17,56 @@ exports.scheduledGetEventFunction = onSchedule({
 
   try {
     // genkitインスタンスの初期化
-    const genkitInstance = await getGenkitInstance({});
-
-    // Geminiの接続テスト
-    const geminiResult = await genkitInstance.generate(
-      "こんにちは！今日の日付を教えてください。"
-    );
-
-    // Vertex AIの接続テスト（モデルを切り替えて）
-    const vertexInstance = await getGenkitInstance({
+    const genkitInstance = await getGenkitInstance({
       model: gemini15Flash.withConfig({ googleSearchRetrieval: { disableAttribution: true } })
     });
 
-    const vertexResult = await vertexInstance.generate(
-      "Hello! What is today's date?"
-    );
 
-    const writeResult = await db.collection("scheduleLog").add({
-      executedAt: new Date(),
-      status: "success",
-      geminiResponse: geminiResult.text || "No response",
-      vertexResponse: vertexResult.text || "No response",
+    // 各都道府県のイベントを検索
+    const prefectureEvents = await eventSearchPrompt(genkitInstance, {
+      address: {
+        prefecture: "岐阜県",
+        city: "垂井町",
+      },
+    });
+    const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
+
+
+    // イベント情報をFirestoreに保存
+    const batch = db.batch();
+    const eventsCollection = db.collection("events");
+
+    // 新しいイベントを追加
+    parsedEventResult.forEach((event) => {
+      const docRef = eventsCollection.doc();
+      batch.set(docRef, {
+        ...event,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     });
 
-    console.log(`Scheduled function executed successfully. Log ID: ${writeResult.id}`);
-    console.log("Gemini Response:", JSON.stringify(geminiResult, null, 2));
-    console.log("Vertex AI Response:", JSON.stringify(vertexResult, null, 2));
+    await batch.commit();
+
+    // ログを記録
+    await db.collection("scheduleLog").add({
+      executedAt: new Date(),
+      status: "success",
+      eventCount: parsedEventResult.length,
+      message: `Successfully fetched and updated ${parsedEventResult.length} events`,
+    });
+
+    console.log(`Scheduled function executed successfully. Found ${parsedEventResult.length} events.`);
   } catch (error) {
     console.error("Error executing scheduled function:", error);
+
+    // エラーログを記録
+    await db.collection("scheduleLog").add({
+      executedAt: new Date(),
+      status: "error",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+
     throw error;
   }
 });
