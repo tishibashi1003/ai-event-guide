@@ -7,7 +7,6 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { createUser } from '@/features/common/auth/serverActions/createUser';
 
 export const LoginContainer = () => {
   const { signInWithGoogle } = useAuth();
@@ -18,7 +17,6 @@ export const LoginContainer = () => {
       const result = await signInWithGoogle();
 
       if (result?.user) {
-        await createUser(result.user.uid);
         router.push('/search');
       }
     } catch (error) {
