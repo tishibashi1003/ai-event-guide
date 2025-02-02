@@ -7,9 +7,14 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useFirestoreCollectionUpdate } from '@/hooks/useFirestore';
+import {
+  useFirestoreCollectionUpdate,
+  useFirestoreDoc,
+} from '@/hooks/useFirestore';
 import { Timestamp } from 'firebase/firestore';
 import type { User } from '@/types/firestoreDocument';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/utils/firebase/config';
 
 export const LoginContainer = () => {
   const { signInWithGoogle } = useAuth();
@@ -21,14 +26,21 @@ export const LoginContainer = () => {
       const result = await signInWithGoogle();
 
       if (result?.user) {
-        // ユーザードキュメントを作成
-        const userData: User = {
-          uid: result.user.uid,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now(),
-        };
+        // ユーザードキュメントの存在確認
+        const userDocRef = doc(db, 'users', result.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-        await add<User>(userData, result.user.uid);
+        // ドキュメントが存在しない場合のみ作成
+        if (!userDocSnap.exists()) {
+          const userData: User = {
+            uid: result.user.uid,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+          };
+
+          await add<User>(userData, result.user.uid);
+        }
+
         router.push('/search');
       }
     } catch (error) {
