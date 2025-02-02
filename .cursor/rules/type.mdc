@@ -1,6 +1,7 @@
 ---
-description: 新しく TypeScript の型を生成するとき
+description: 新しく TypeScript の型や zod で schema を生成するとき
 globs: 
 ---
 - 必ず type を使う
 - Interface は使用しない
+- zod で schema を定義する際は min, max など厳密な指定は不要
