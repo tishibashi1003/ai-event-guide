@@ -1,0 +1,6 @@
+---
+description: Firestore へアクセスする必要がある処理を実装する場合
+globs: 
+---
+- 基本的な CRUD の wrapper が src/hooks/useFirestore.ts にある
+- wrapper 以外を利用して Firestore へアクセスしないこと
