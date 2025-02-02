@@ -1,5 +1,5 @@
 import { Genkit } from "genkit";
-import { OutputEventSchema, Address, AddressSchema } from "../types/event";
+import { OutputEventSchema, Address, AddressSchema } from "../types/prompt";
 import { z } from "zod";
 
 export const eventSearchPrompt = async (

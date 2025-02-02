@@ -1,11 +1,15 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { onCall } from "firebase-functions/v2/https";
 import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
 import { gemini15Flash, textEmbedding004 } from "@genkit-ai/vertexai";
 import { eventSearchPrompt } from "./prompts/eventSearch";
-import { Event, OutputEventSchema } from "./types/event";
 import { convertYYYYMMDDToTimestamp } from "./utils/date";
+import { Event, EventInteractionHistory, EventSchema } from "./types/firestoreDocument";
+import { generateUserProfileVector } from "./utils/vector";
+import { OutputEventSchema } from "./types/prompt";
+import { EventInteractionInputSchema } from "./types/params";
 
 initializeApp();
 
@@ -94,5 +98,80 @@ exports.scheduledGetEventFunction = onSchedule({
     });
 
     throw error;
+  }
+});
+
+exports.addEventInteractionAndRecalculateUserPreference = onCall({
+  region: "asia-northeast1",
+}, async (request) => {
+  const db = getFirestore();
+
+  try {
+    const parsedData = EventInteractionInputSchema.parse(request.data);
+    const { userId, interactions } = parsedData;
+
+    // ユーザーの既存の履歴を取得（直近10件）
+    const historiesSnapshot = await db
+      .collection("eventInteractionHistories")
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .limit(10)
+      .get();
+
+    const histories: EventInteractionHistory[] = historiesSnapshot.docs.map(doc => doc.data() as EventInteractionHistory);
+
+    // 新しいインタラクションを追加
+    const batch = db.batch();
+    const historyCollection = db.collection("eventInteractionHistories");
+    const timestamp = Timestamp.now();
+
+    // 各インタラクションに対してイベントベクトルを取得し、履歴を保存
+    for (const { eventId, action } of interactions) {
+      const eventDoc = await db.collection("events").doc(eventId).get();
+      if (!eventDoc.exists) {
+        console.warn(`Event not found: ${eventId}`);
+        continue;
+      }
+
+      const parsedEvent = EventSchema.parse(eventDoc.data());
+      const eventVector = parsedEvent?.eventVector;
+
+      if (!eventVector) {
+        console.warn(`Event vector not found for event ID: ${eventId}`);
+        continue;
+      }
+
+      const historyData: EventInteractionHistory = {
+        userId,
+        eventId,
+        action,
+        eventVector,
+        createdAt: timestamp,
+      };
+
+      const historyRef = historyCollection.doc();
+      batch.set(historyRef, historyData);
+      histories.push(historyData);
+    }
+
+    // ユーザープロファイルベクトルを生成
+    const userVector = generateUserProfileVector(histories);
+
+    // ユーザードキュメントを更新
+    const userRef = db.collection("users").doc(userId);
+    batch.update(userRef, {
+      preferenceVector: FieldValue.vector(userVector),
+      updatedAt: timestamp,
+    });
+
+    await batch.commit();
+
+    return {
+      success: true,
+      message: "User interactions and vector updated successfully",
+    };
+  } catch (error) {
+    console.error("Error updating user interactions:", error);
+    throw new Error(error instanceof Error ? error.message : "Unknown error occurred");
   }
 });
