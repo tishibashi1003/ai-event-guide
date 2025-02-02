@@ -33,7 +33,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
   ];
 
   return (
-    <div className='min-h-screen bg-white'>
+    <div className='min-h-screen bg-white max-w-sm mx-auto'>
       {/* ヘッダー */}
       <motion.header
         className='fixed top-0 left-0 right-0 z-50 shadow-sm bg-white/95 backdrop-blur-sm'
