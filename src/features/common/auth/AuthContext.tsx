@@ -16,6 +16,7 @@ import {
   deleteUser,
   GoogleAuthProvider,
   signInWithPopup,
+  UserCredential,
 } from 'firebase/auth';
 import { auth, db } from '@/utils/firebase/config';
 import {
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await createUserWithEmailAndPassword(auth, email, password);
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (): Promise<UserCredential> => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         router.push('/search');
-        return;
+        return result;
       }
       await setDoc(
         userDocRef,
@@ -83,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         { merge: true }
       );
       router.push('/preferences');
+      return result;
     } catch (error) {
       console.error('Googleログイン中にエラーが発生しました:', error);
       throw error;

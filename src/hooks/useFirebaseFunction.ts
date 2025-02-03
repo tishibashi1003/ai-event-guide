@@ -1,5 +1,9 @@
-import { getFunctions, httpsCallable, HttpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsCallable } from 'firebase/functions';
 import useSWR from 'swr';
+
+const functions = getFunctions();
+functions.region = 'asia-northeast1';
 
 // Cloud Functionsのレスポンス型
 export type CloudFunctionResponse<T> = {
@@ -32,8 +36,6 @@ const functionFetcher = async <T, P>(
   functionName: string,
   params: P
 ): Promise<T> => {
-  const functions = getFunctions();
-  functions.region = 'asia-northeast1';
   const callable = httpsCallable(functions, functionName);
   const result = await callable(params);
   return result.data as T;

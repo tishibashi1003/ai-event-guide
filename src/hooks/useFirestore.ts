@@ -45,7 +45,7 @@ export const docFetcher = async <T>(docRef: DocumentReference) => {
 export const docsFetcher = async <T>(
   collectionPath: string,
   ids: string[]
-): Promise<(T & { id: string })[]> => {
+): Promise<T[]> => {
   if (!ids.length) return [];
 
   const collectionRef = collection(db, collectionPath);
@@ -55,7 +55,7 @@ export const docsFetcher = async <T>(
   return snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
-  })) as (T & { id: string })[];
+  })) as T[];
 };
 
 // IDの順序を維持しながらドキュメントをソートする

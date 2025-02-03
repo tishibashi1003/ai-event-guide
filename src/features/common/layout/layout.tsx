@@ -2,10 +2,11 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { Search, Star, User, Heart, Settings } from 'lucide-react';
+import { Search, Star, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import LogoHorizontal from '@/components/logo/LogoHorizontal';
+
 interface LayoutProps {
   children: React.ReactNode;
   currentPath: string;

@@ -8,7 +8,7 @@ import {
   useAnimation,
 } from 'framer-motion';
 import { Event } from '@/types/firestoreDocument';
-import { Building2, Calendar, MapPin, Users } from 'lucide-react';
+import { Building2, Calendar, MapPin } from 'lucide-react';
 
 // 日付を年月日形式に変換する関数
 const formatDateYYYYMMDD = (dateStr: string): string => {

@@ -4,17 +4,7 @@ import React, { useState, useEffect } from 'react';
 import SearchLoading from './searchLoading';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
-import { db } from '@/utils/firebase/config';
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  documentId,
-  orderBy,
-  Timestamp,
-  limit,
-} from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { useFirestoreCollection } from '@/hooks/useFirestore';

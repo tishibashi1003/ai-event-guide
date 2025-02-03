@@ -2,6 +2,7 @@
 
 import { Calendar, MapPin, Star, Sparkles } from 'lucide-react';
 import type { AppPreviewSectionProps } from '../type';
+import Image from 'next/image';
 
 export const AppPreviewSection = ({ className }: AppPreviewSectionProps) => {
   return (
@@ -33,10 +34,12 @@ export const AppPreviewSection = ({ className }: AppPreviewSectionProps) => {
               </ul>
             </div>
             <div className='relative'>
-              <img
-                src='https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-sZg3GQnS34GXw916cXbRCPwHuExwAo.png'
-                alt='ココいくアプリのスクリーンショット'
-                className='rounded-xl shadow-2xl mx-auto max-w-[300px]'
+              <Image
+                src='/app-preview.png'
+                alt='アプリのプレビュー'
+                width={300}
+                height={600}
+                className='rounded-xl shadow-lg'
               />
               <div className='absolute -bottom-6 -right-6 bg-amber-400 rounded-full p-4 shadow-lg'>
                 <Sparkles className='w-6 h-6 text-white' />
