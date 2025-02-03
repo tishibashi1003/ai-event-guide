@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { User } from '@/types/firestoreDocument';
+import { VectorValue } from 'firebase/firestore';
 
 export const usePreferenceCheck = (uid: string | undefined) => {
   const [hasPreference, setHasPreference] = useState<boolean | null>(null);
@@ -22,7 +23,8 @@ export const usePreferenceCheck = (uid: string | undefined) => {
     }
 
     if (userData) {
-      const hasVector = userData.eventVector !== undefined && userData.eventVector.length > 0;
+      const vector = userData.preferenceVector as unknown as VectorValue;
+      const hasVector = vector !== undefined && vector.toArray().length > 0;
       setHasPreference(hasVector);
 
       if (!hasVector) {

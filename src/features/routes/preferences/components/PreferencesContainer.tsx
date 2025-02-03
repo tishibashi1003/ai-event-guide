@@ -78,14 +78,13 @@ export function PreferencesContainer() {
       // ５秒待機して分析中の演出を表示
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      // router.push('/search');
+      router.push('/search');
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
   }, [interactionHistory, user, router, setUserData, addInteraction]);
 
   useEffect(() => {
-    console.log('🚀  useEffect  events?.length:', currentIndex, events?.length);
     if (events && currentIndex >= (events?.length ?? 0)) {
       onCalculateAndSave();
     }

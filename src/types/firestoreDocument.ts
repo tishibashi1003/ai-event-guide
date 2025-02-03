@@ -19,7 +19,7 @@ export const EventSchema = z.object({
 
 export const UserSchema = z.object({
   uid: z.string(),
-  eventVector: z.array(z.number()).optional(),
+  preferenceVector: z.array(z.number()).optional(),
   createdAt: z.instanceof(Timestamp),
   updatedAt: z.instanceof(Timestamp)
 });
