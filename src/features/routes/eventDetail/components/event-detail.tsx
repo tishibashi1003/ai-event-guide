@@ -8,7 +8,8 @@ import {
   ChevronDown,
   MapIcon,
 } from 'lucide-react';
-import { Event } from '@/features/common/event/type';
+import { Event } from '@/types/firestoreDocument';
+
 interface EventDetailProps {
   event: Event | null;
   onBack: () => void;
@@ -18,7 +19,7 @@ export default function EventDetail({ event, onBack }: EventDetailProps) {
   return (
     <div className='flex flex-col min-h-screen bg-white'>
       <header className='relative'>
-        <span className='text-6xl'>{event?.emoji}</span>
+        <span className='text-6xl'>{event?.eventEmoji}</span>
         <button />
         <button
           onClick={onBack}
@@ -29,33 +30,25 @@ export default function EventDetail({ event, onBack }: EventDetailProps) {
       </header>
 
       <main className='flex-1 px-4 py-6'>
-        <h1 className='text-2xl font-bold text-black mb-4'>{event?.title}</h1>
+        <h1 className='text-2xl font-bold text-black mb-4'>
+          {event?.eventTitleJa}
+        </h1>
 
         <div className='flex items-center text-[#808080] mb-2'>
           <Calendar size={18} className='mr-2' />
-          <span>{event?.date}</span>
+          <span>{event?.eventDateYYYYMMDD}</span>
         </div>
 
         <div className='flex items-center text-[#808080] mb-2'>
           <MapPin size={18} className='mr-2' />
-          <span>{event?.location}</span>
-        </div>
-
-        <div className='flex items-center mb-2'>
-          <Tag size={18} className='mr-2 text-[#F5A623]' />
-          <span className='font-semibold text-[#F5A623]'>{event?.price}</span>
-        </div>
-
-        <div className='flex items-center mb-4'>
-          <Users size={18} className='mr-2 text-[#FFD700]' />
-          <span className='text-[#FFD700]'>{event?.ageRange}</span>
+          <span>{event?.eventLocationNameJa}</span>
         </div>
 
         <div className='mb-6'>
           <h2 className='text-lg font-semibold text-black mb-2'>
             イベント詳細
           </h2>
-          <p className='text-black'>{event?.description}</p>
+          <p className='text-black'>{event?.eventDescriptionJa}</p>
           <button className='flex items-center text-[#FFD700] mt-2'>
             <span className='mr-1'>もっと見る</span>
             <ChevronDown size={16} />
