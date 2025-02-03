@@ -3,6 +3,7 @@ import './../globals.css';
 import { Inter } from 'next/font/google';
 import type React from 'react';
 import { AuthGuard } from '@/features/common/auth/AuthGuard';
+import { Toaster } from '@/components/ui/toast/toaster';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
         <Layout currentPath={'/'}>
           <AuthGuard>{children}</AuthGuard>
         </Layout>
+        <Toaster />
       </body>
     </html>
   );
