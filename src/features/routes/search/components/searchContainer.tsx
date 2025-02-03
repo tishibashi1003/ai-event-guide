@@ -114,7 +114,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('weekend')}
           >
-            おすすめ
+            今週のおすすめ
           </button>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
