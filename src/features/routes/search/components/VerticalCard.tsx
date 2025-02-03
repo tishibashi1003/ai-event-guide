@@ -2,6 +2,7 @@ import type React from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, Users } from 'lucide-react';
 import { Event } from '@/types/firestoreDocument';
+import { formatDate } from '@/utils/day';
 
 interface VerticalCardProps {
   event: Event;
@@ -35,7 +36,7 @@ const VerticalCard: React.FC<VerticalCardProps> = ({ event, onClick }) => {
 
           <div className='flex items-center text-gray-600 text-sm'>
             <Calendar className='w-4 h-4 mr-2 text-yellow-500' />
-            <span>{event.eventDateYYYYMMDD}</span>
+            <span>{formatDate(event.eventDate.toDate())}</span>
           </div>
 
           <div className='flex items-center text-gray-600 text-sm'>
