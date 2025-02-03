@@ -27,6 +27,7 @@ export type FirestoreCollectionUpdateOperations = {
 };
 
 export type QueryOptions = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   conditions?: [string, WhereFilterOp, any][];
   orderBy?: [string, OrderByDirection][];
   limit?: number;

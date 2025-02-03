@@ -13,7 +13,8 @@ import { PreferenceCalculation } from './PreferenceCalculation';
 import { generateUserProfileVector } from '../utils/vector';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Timestamp, vector } from 'firebase/firestore';
+import { doc, Timestamp, updateDoc, vector } from 'firebase/firestore';
+import { db } from '@/utils/firebase/config';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -60,10 +61,8 @@ export function PreferencesContainer() {
 
     try {
       for (const history of interactionHistory) {
-        const { set: setInteraction } = useFirestoreUpdate(
-          getInteractionPath(history.eventId)
-        );
-        await setInteraction({
+        const docRef = doc(db, getInteractionPath(history.eventId));
+        await updateDoc(docRef, {
           ...history,
           eventVector: history.eventVector,
           createdAt: Timestamp.now(),

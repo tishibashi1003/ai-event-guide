@@ -7,7 +7,6 @@ import {
   User,
 } from '@/types/firestoreDocument';
 import { useRouter } from 'next/navigation';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
 import { Star } from 'lucide-react';
