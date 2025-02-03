@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
+import { Star } from 'lucide-react';
 
 interface Props {
   eventId: string;
@@ -49,7 +50,7 @@ export default function EventDetailContainer({ eventId }: Props) {
       <main className='flex-1 p-4'>
         <div className='max-w-2xl mx-auto'>
           <h1 className='mb-4 text-2xl font-bold text-gray-900'>
-            {event.eventTitleJa}
+            {event.eventEmoji} {event.eventTitleJa}
           </h1>
 
           <div className='space-y-6'>
@@ -85,19 +86,12 @@ export default function EventDetailContainer({ eventId }: Props) {
               </p>
             </div>
 
-            {/* 申し込みリンク */}
-            {event.eventSourceUrl && (
-              <div className='pt-4'>
-                <a
-                  href={event.eventSourceUrl}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='inline-block px-8 py-3 font-semibold text-white bg-yellow-500 rounded-full hover:bg-yellow-600 transition-colors'
-                >
-                  申し込みページへ
-                </a>
-              </div>
-            )}
+            <div className='flex justify-center mt-4'>
+              <button className='w-auto h-16 px-6 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50'>
+                <Star className='w-6 h-6 mr-2 fill-current' />
+                ココいく！
+              </button>
+            </div>
           </div>
         </div>
       </main>
