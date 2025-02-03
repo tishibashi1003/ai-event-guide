@@ -44,3 +44,4 @@ credentials.*.json
 
 # firebase
 .firebase/logs
+.firebase
