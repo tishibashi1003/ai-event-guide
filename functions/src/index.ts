@@ -182,7 +182,12 @@ exports.findSimilarEvents = onCall({
   const db = getFirestore();
 
   try {
-    const { userId, limit = 10 } = request.data;
+    const {
+      userId,
+      limit = 10,
+      startDate, // ISO文字列形式（例：2024-02-15）
+      endDate    // ISO文字列形式（例：2024-03-15）
+    } = request.data;
 
     // ユーザードキュメントを取得
     const userDoc = await db.collection("users").doc(userId).get();
@@ -195,9 +200,34 @@ exports.findSimilarEvents = onCall({
       throw new Error("User preference vector not found");
     }
 
+    // 日付範囲の設定
+    let startDateTime = new Date();
+    startDateTime.setHours(0, 0, 0, 0);
+
+    let endDateTime;
+
+    // startDateが指定されている場合は、その日付を使用
+    if (startDate) {
+      startDateTime = new Date(startDate);
+      startDateTime.setHours(0, 0, 0, 0);
+    }
+
+    // endDateが指定されている場合は、その日付を使用
+    if (endDate) {
+      endDateTime = new Date(endDate);
+      endDateTime.setHours(23, 59, 59, 999);
+    }
+
     // イベントコレクションに対してベクトル検索を実行
     const eventsCollection = db.collection("events");
-    const vectorQuery = eventsCollection.findNearest({
+    let query = eventsCollection.where('eventDate', '>=', Timestamp.fromDate(startDateTime));
+
+    // 終了日が指定されている場合は、範囲条件を追加
+    if (endDateTime) {
+      query = query.where('eventDate', '<=', Timestamp.fromDate(endDateTime));
+    }
+
+    const vectorQuery = query.findNearest({
       vectorField: 'eventVector',
       queryVector: userData.preferenceVector,
       limit,
@@ -212,6 +242,10 @@ exports.findSimilarEvents = onCall({
     return {
       success: true,
       eventIds,
+      period: {
+        start: startDateTime.toISOString(),
+        end: endDateTime ? endDateTime.toISOString() : null
+      }
     };
   } catch (error) {
     console.error("Error finding similar events:", error);

@@ -43,8 +43,21 @@ export default function SearchContainer() {
         functions.region = 'asia-northeast1';
         const findSimilarEvents = httpsCallable(functions, 'findSimilarEvents');
 
+        // 日付範囲の設定（今日から7日後まで）
+        const today = new Date();
+        const nextWeek = new Date(today);
+        nextWeek.setDate(today.getDate() + 7);
+
+        // ISO文字列に変換（YYYY-MM-DD形式）
+        const startDate = today.toISOString().split('T')[0];
+        const endDate = nextWeek.toISOString().split('T')[0];
+
         // 類似イベントのIDを取得
-        const result = await findSimilarEvents({ userId: user.uid });
+        const result = await findSimilarEvents({
+          userId: user.uid,
+          startDate,
+          endDate,
+        });
         const data = result.data as { success: boolean; eventIds: string[] };
 
         if (data.success && data.eventIds.length > 0) {
