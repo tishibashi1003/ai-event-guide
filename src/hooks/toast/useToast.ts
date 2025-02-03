@@ -15,7 +15,15 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement;
 };
 
-const actionTypes = {
+// actionTypesを型として定義
+type ActionType = {
+  ADD_TOAST: 'ADD_TOAST';
+  UPDATE_TOAST: 'UPDATE_TOAST';
+  DISMISS_TOAST: 'DISMISS_TOAST';
+  REMOVE_TOAST: 'REMOVE_TOAST';
+};
+
+const actionTypes: ActionType = {
   ADD_TOAST: 'ADD_TOAST',
   UPDATE_TOAST: 'UPDATE_TOAST',
   DISMISS_TOAST: 'DISMISS_TOAST',
@@ -29,23 +37,21 @@ function genId() {
   return count.toString();
 }
 
-type ActionTypes = typeof actionTypes;
-
 type Action =
   | {
-    type: ActionTypes['ADD_TOAST'];
+    type: typeof actionTypes.ADD_TOAST;
     toast: ToasterToast;
   }
   | {
-    type: ActionTypes['UPDATE_TOAST'];
+    type: typeof actionTypes.UPDATE_TOAST;
     toast: Partial<ToasterToast>;
   }
   | {
-    type: ActionTypes['DISMISS_TOAST'];
+    type: typeof actionTypes.DISMISS_TOAST;
     toastId?: ToasterToast['id'];
   }
   | {
-    type: ActionTypes['REMOVE_TOAST'];
+    type: typeof actionTypes.REMOVE_TOAST;
     toastId?: ToasterToast['id'];
   };
 
