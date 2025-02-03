@@ -151,18 +151,6 @@ export default function EventDetailContainer({ eventId }: Props) {
 
   return (
     <div className='flex flex-col min-h-screen bg-white'>
-      <header className='sticky top-0 z-10 bg-white border-b border-gray-200'>
-        <div className='flex items-center h-16 px-4'>
-          <button
-            onClick={() => router.push('/search')}
-            className='flex items-center text-gray-600 hover:text-gray-900'
-          >
-            <ArrowLeftIcon className='w-6 h-6 mr-2' />
-            <span>戻る</span>
-          </button>
-        </div>
-      </header>
-
       <main className='flex-1 p-4'>
         <div className='max-w-2xl mx-auto'>
           <h1 className='mb-4 text-2xl font-bold text-gray-900'>

@@ -8,8 +8,10 @@ import { Event, EventInteractionHistory } from '@/types/firestoreDocument';
 import { useAuth } from '@/hooks/useAuth';
 import { Loading } from '@/components/ui/loading';
 import { formatDate } from '@/utils/day';
+import { useRouter } from 'next/navigation';
 
 export default function KokoikuContainer() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
 
   const { data: interactions, isLoading: interactionsLoading } =
@@ -82,7 +84,8 @@ export default function KokoikuContainer() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className='bg-white rounded-xl shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg'
+                className='bg-white rounded-xl shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg cursor-pointer'
+                onClick={() => router.push(`/event/${event.id}`)}
               >
                 <div className='p-3 flex-1'>
                   <h2 className='font-bold text-lg mb-1 text-[#4A4A4A]'>
