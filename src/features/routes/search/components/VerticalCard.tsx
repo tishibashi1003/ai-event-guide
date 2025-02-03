@@ -7,9 +7,14 @@ import { formatDate } from '@/utils/day';
 interface VerticalCardProps {
   event: Event;
   onClick?: () => void;
+  isRecommended?: boolean;
 }
 
-const VerticalCard: React.FC<VerticalCardProps> = ({ event, onClick }) => {
+const VerticalCard: React.FC<VerticalCardProps> = ({
+  event,
+  onClick,
+  isRecommended,
+}) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -19,7 +24,12 @@ const VerticalCard: React.FC<VerticalCardProps> = ({ event, onClick }) => {
       className='w-full mb-4 cursor-pointer'
       onClick={onClick}
     >
-      <div className='bg-white rounded-lg shadow-md overflow-hidden'>
+      <div className='bg-white rounded-lg shadow-md overflow-hidden relative'>
+        {isRecommended && (
+          <div className='absolute -right-9 top-4 rotate-45 bg-yellow-500 text-center text-white px-10 py-1 text-xs font-medium shadow-md z-20 '>
+            Pick Up
+          </div>
+        )}
         <div className='bg-gradient-to-br from-yellow-200 via-yellow-100 to-orange-100 h-32 flex items-center justify-center relative'>
           <div className='text-center p-4 z-10'>
             <span className='text-4xl'>{event.eventEmoji}</span>

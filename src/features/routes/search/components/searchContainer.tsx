@@ -33,8 +33,10 @@ export default function SearchContainer() {
   nextWeek.setDate(today.getDate() + 7);
 
   // ISO文字列に変換（YYYY-MM-DD形式）
-  const startDate = today.toISOString().split('T')[0];
-  const endDate = nextWeek.toISOString().split('T')[0];
+  // const startDate = today.toISOString().split('T')[0];
+  // const endDate = nextWeek.toISOString().split('T')[0];
+  const startDate = '2025-02-10';
+  const endDate = '2025-02-16';
 
   // Cloud Functionsの呼び出し
   const {
@@ -142,6 +144,7 @@ export default function SearchContainer() {
                   key={event.id}
                   event={event}
                   onClick={() => setShowDetail(true)}
+                  isRecommended={activeTab === 'weekend'}
                 />
               ))}
             </div>
