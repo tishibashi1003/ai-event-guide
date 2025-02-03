@@ -13,7 +13,7 @@ import { PreferenceCalculation } from './PreferenceCalculation';
 import { generateUserProfileVector } from '../utils/vector';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import { doc, Timestamp, updateDoc, vector } from 'firebase/firestore';
+import { doc, setDoc, Timestamp, vector } from 'firebase/firestore';
 import { db } from '@/utils/firebase/config';
 
 export function PreferencesContainer() {
@@ -37,8 +37,11 @@ export function PreferencesContainer() {
     user ? `users/${user.uid}` : ''
   );
 
-  const getInteractionPath = (eventId: string) =>
-    user ? `users/${user.uid}/eventInteractionHistories/${eventId}` : '';
+  const getInteractionPath = useCallback(
+    (eventId: string) =>
+      user ? `users/${user.uid}/eventInteractionHistories/${eventId}` : '',
+    [user]
+  );
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!events || currentIndex >= events.length || !user) return;
@@ -61,8 +64,8 @@ export function PreferencesContainer() {
 
     try {
       for (const history of interactionHistory) {
-        const docRef = doc(db, getInteractionPath(history.eventId));
-        await updateDoc(docRef, {
+        const collectionRef = doc(db, getInteractionPath(history.eventId));
+        await setDoc(collectionRef, {
           ...history,
           eventVector: history.eventVector,
           createdAt: Timestamp.now(),
@@ -85,7 +88,7 @@ export function PreferencesContainer() {
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
-  }, [interactionHistory, user, router, setUserData]);
+  }, [user, interactionHistory, setUserData, router, getInteractionPath]);
 
   useEffect(() => {
     if (events && currentIndex >= (events?.length ?? 0)) {
