@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, DocumentReference, CollectionReference, DocumentData } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, DocumentReference, CollectionReference, DocumentData, query, where, orderBy, limit as firestoreLimit, Query, WhereFilterOp, OrderByDirection } from 'firebase/firestore';
 import useSWR, { mutate } from 'swr';
 import { db } from '@/utils/firebase/config';
 import { FirestoreError } from 'firebase/firestore';
@@ -26,6 +26,11 @@ export type FirestoreCollectionUpdateOperations = {
   refresh: () => Promise<void>;
 };
 
+export type QueryOptions = {
+  conditions?: [string, WhereFilterOp, any][];
+  orderBy?: [string, OrderByDirection][];
+  limit?: number;
+};
 
 // Firestoreドキュメントを取得するためのフェッチャー
 const docFetcher = async <T>(docRef: DocumentReference) => {
@@ -37,7 +42,7 @@ const docFetcher = async <T>(docRef: DocumentReference) => {
 };
 
 // Firestoreコレクションを取得するためのフェッチャー
-const collectionFetcher = async <T>(collectionRef: CollectionReference) => {
+const collectionFetcher = async <T>(collectionRef: CollectionReference | Query) => {
   const snapshot = await getDocs(collectionRef);
   return snapshot.docs.map(doc => ({
     id: doc.id,
@@ -64,11 +69,41 @@ export function useFirestoreDoc<T>(path: string | undefined) {
 }
 
 // コレクションを取得するためのフック
-export function useFirestoreCollection<T>(path: string) {
+export function useFirestoreCollection<T>(
+  path: string,
+  options?: QueryOptions
+) {
   const collectionRef = collection(db, path);
+  let queryRef = collectionRef;
+
+  if (options) {
+    const constraints = [];
+
+    // 条件の追加
+    if (options.conditions) {
+      for (const [field, op, value] of options.conditions) {
+        constraints.push(where(field, op, value));
+      }
+    }
+
+    // ソート順の追加
+    if (options.orderBy) {
+      for (const [field, direction] of options.orderBy) {
+        constraints.push(orderBy(field, direction));
+      }
+    }
+
+    // 件数制限の追加
+    if (options.limit) {
+      constraints.push(firestoreLimit(options.limit));
+    }
+
+    queryRef = query(collectionRef, ...constraints);
+  }
+
   const { data, error, isLoading } = useSWR(
-    path ? ['collection', path] : null,
-    () => collectionFetcher<T>(collectionRef),
+    path ? ['collection', path, options] : null,
+    () => collectionFetcher<T>(queryRef),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

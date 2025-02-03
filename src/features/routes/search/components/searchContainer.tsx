@@ -13,36 +13,64 @@ import {
   query,
   where,
   documentId,
+  orderBy,
+  Timestamp,
+  limit,
 } from 'firebase/firestore';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
+import { useFirestoreCollection } from '@/hooks/useFirestore';
 
 export default function SearchContainer() {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
-  const [searchResults, setSearchResults] = useState<Event[]>([]);
-
-  const events = activeTab === 'weekend' ? searchResults : searchResults;
-  const currentEvent = events.length > 0 ? events[currentIndex] : null;
+  const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
 
   // 日付範囲の設定（今日から7日後まで）
-  const today = new Date();
+  const today = new Date('2025-02-10'); // テスト用の固定日付
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
 
   // ISO文字列に変換（YYYY-MM-DD形式）
-  // const startDate = today.toISOString().split('T')[0];
-  // const endDate = nextWeek.toISOString().split('T')[0];
+  // const startDate = today.toISOString().split('T')[0]; // 2025-02-10
+  // const endDate = nextWeek.toISOString().split('T')[0]; // 2025-02-17
   const startDate = '2025-02-10';
-  const endDate = '2025-02-16';
+  const endDate = '2025-02-28';
 
-  // Cloud Functionsの呼び出し
+  // 今週のイベントデータの取得（useFirestoreを使用）
+  const startTimestamp = Timestamp.fromDate(today);
+  const endTimestamp = Timestamp.fromDate(nextWeek);
+  const { data: weeklyEvents = [], isLoading: isLoadingWeekly } =
+    useFirestoreCollection<Event>('events', {
+      conditions: [
+        ['eventDate', '>=', startTimestamp],
+        ['eventDate', '<=', endTimestamp],
+      ],
+      orderBy: [['eventDate', 'asc']],
+      limit: 20,
+    });
+
+  const events =
+    activeTab === 'weekend'
+      ? [
+          ...recommendedEvents,
+          ...weeklyEvents.filter(
+            (weeklyEvent) =>
+              !recommendedEvents.some(
+                (recEvent) => recEvent.id === weeklyEvent.id
+              )
+          ),
+        ]
+      : [...recommendedEvents, ...weeklyEvents];
+  const currentEvent = events.length > 0 ? events[currentIndex] : null;
+
+  // Cloud Functionsの呼び出し（おすすめイベント）
   const {
     data: similarEventsData,
     error,
-    isLoading,
+    isLoading: isLoadingRecommended,
   } = useFindSimilarEvents(
     user
       ? {
@@ -53,20 +81,21 @@ export default function SearchContainer() {
       : null
   );
 
+  console.log('🚀  SearchContainer  data:', weeklyEvents, similarEventsData);
+
   useEffect(() => {
     setCurrentIndex(0);
   }, []);
 
-  // イベントデータの取得
+  // おすすめイベントデータの取得
   useEffect(() => {
-    async function fetchEventDetails() {
+    async function fetchRecommendedEvents() {
       if (!similarEventsData?.success || !similarEventsData.eventIds.length) {
-        setSearchResults([]);
+        setRecommendedEvents([]);
         return;
       }
 
       try {
-        // Firestoreからイベント詳細を取得
         const eventsRef = collection(db, 'events');
         const eventsQuery = query(
           eventsRef,
@@ -79,19 +108,18 @@ export default function SearchContainer() {
           ...doc.data(),
         })) as Event[];
 
-        // イベントIDの順序を維持するためにソート
         const sortedEvents = similarEventsData.eventIds
           .map((id) => eventsData.find((event) => event.id === id))
           .filter((event): event is Event => event !== undefined);
 
-        setSearchResults(sortedEvents);
+        setRecommendedEvents(sortedEvents);
       } catch (error) {
-        console.error('イベント詳細の取得中にエラーが発生しました:', error);
-        setSearchResults([]);
+        console.error('おすすめイベントの取得中にエラーが発生しました:', error);
+        setRecommendedEvents([]);
       }
     }
 
-    fetchEventDetails();
+    fetchRecommendedEvents();
   }, [similarEventsData]);
 
   if (error) {
@@ -103,6 +131,8 @@ export default function SearchContainer() {
       <EventDetail event={currentEvent} onBack={() => setShowDetail(false)} />
     );
   }
+
+  const isLoading = isLoadingRecommended || isLoadingWeekly;
 
   return (
     <div className='flex flex-col h-screen max-w-sm mx-auto'>
@@ -144,7 +174,9 @@ export default function SearchContainer() {
                   key={event.id}
                   event={event}
                   onClick={() => setShowDetail(true)}
-                  isRecommended={activeTab === 'weekend'}
+                  isRecommended={recommendedEvents.some(
+                    (recEvent) => recEvent.id === event.id
+                  )}
                 />
               ))}
             </div>
