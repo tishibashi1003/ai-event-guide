@@ -28,27 +28,41 @@ export default function SearchContainer() {
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
   const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
+  const [dateRange, setDateRange] = useState<{
+    startDate: string;
+    endDate: string;
+    startTimestamp: Timestamp;
+    endTimestamp: Timestamp;
+  }>({
+    startDate: '',
+    endDate: '',
+    startTimestamp: Timestamp.now(),
+    endTimestamp: Timestamp.now(),
+  });
 
-  // 日付範囲の設定（今日から7日後まで）
-  const today = new Date('2025-02-10'); // テスト用の固定日付
-  const nextWeek = new Date(today);
-  nextWeek.setDate(today.getDate() + 7);
+  useEffect(() => {
+    // 日付範囲の設定（今日から7日後まで）
+    const today = new Date();
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
 
-  // ISO文字列に変換（YYYY-MM-DD形式）
-  // const startDate = today.toISOString().split('T')[0]; // 2025-02-10
-  // const endDate = nextWeek.toISOString().split('T')[0]; // 2025-02-17
-  const startDate = '2025-02-10';
-  const endDate = '2025-02-28';
+    setDateRange({
+      startDate: today.toISOString().split('T')[0],
+      endDate: nextWeek.toISOString().split('T')[0],
+      startTimestamp: Timestamp.fromDate(today),
+      endTimestamp: Timestamp.fromDate(nextWeek),
+    });
+  }, []);
 
   // 今週のイベントデータの取得（useFirestoreを使用）
-  const startTimestamp = Timestamp.fromDate(today);
-  const endTimestamp = Timestamp.fromDate(nextWeek);
   const { data: weeklyEvents = [], isLoading: isLoadingWeekly } =
     useFirestoreCollection<Event>('events', {
-      conditions: [
-        ['eventDate', '>=', startTimestamp],
-        ['eventDate', '<=', endTimestamp],
-      ],
+      conditions: dateRange.startDate
+        ? [
+            ['eventDate', '>=', dateRange.startTimestamp],
+            ['eventDate', '<=', dateRange.endTimestamp],
+          ]
+        : [],
       orderBy: [['eventDate', 'asc']],
     });
 
@@ -72,11 +86,11 @@ export default function SearchContainer() {
     error,
     isLoading: isLoadingRecommended,
   } = useFindSimilarEvents(
-    user
+    user && dateRange.startDate
       ? {
           userId: user.uid,
-          startDate,
-          endDate,
+          startDate: dateRange.startDate,
+          endDate: dateRange.endDate,
           limit: 5,
         }
       : null
