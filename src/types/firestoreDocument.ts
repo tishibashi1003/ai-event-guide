@@ -31,9 +31,9 @@ export const UserSchema = z.object({
 export const EventInteractionHistorySchema = z.object({
   userId: z.string(),
   eventId: z.string(),
-  action: z.enum(['like', 'dislike', 'kokoikku', 'view']),
+  action: z.enum(['like', 'dislike', 'kokoiku', 'view']),
   eventVector: z.array(z.number()),
-  timestamp: z.instanceof(Timestamp)
+  createdAt: z.instanceof(Timestamp),
 });
 
 export type User = z.infer<typeof UserSchema>;

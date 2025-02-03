@@ -13,7 +13,7 @@ export const generateUserProfileVector = (histories: EventInteractionHistory[]):
       case 'like':
         weight = 1 / (index + 1) * 1.2; // like は少し高めの重み
         break;
-      case 'kokoikku':
+      case 'kokoiku':
         weight = 1 / (index + 1) * 1.5; // kokoikku は高めの重み
         break;
     }

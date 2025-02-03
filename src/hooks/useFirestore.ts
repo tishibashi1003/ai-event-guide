@@ -97,40 +97,42 @@ export function useFirestoreDoc<T>(path: string | undefined) {
 
 // コレクションを取得するためのフック
 export function useFirestoreCollection<T>(
-  path: string,
+  path: string | null | undefined,
   options?: QueryOptions
 ) {
-  const collectionRef = collection(db, path) as CollectionReference<DocumentData>;
-  let queryRef: Query<DocumentData> = collectionRef;
-
-  if (options) {
-    const constraints = [];
-
-    // 条件の追加
-    if (options.conditions) {
-      for (const [field, op, value] of options.conditions) {
-        constraints.push(where(field, op, value));
-      }
-    }
-
-    // ソート順の追加
-    if (options.orderBy) {
-      for (const [field, direction] of options.orderBy) {
-        constraints.push(orderBy(field, direction));
-      }
-    }
-
-    // 件数制限の追加
-    if (options.limit) {
-      constraints.push(firestoreLimit(options.limit));
-    }
-
-    queryRef = query(collectionRef, ...constraints);
-  }
-
   const { data, error, isLoading } = useSWR(
     path ? ['collection', path, options] : null,
-    () => collectionFetcher<T>(queryRef),
+    path ? () => {
+      const collectionRef = collection(db, path) as CollectionReference<DocumentData>;
+      let queryRef: Query<DocumentData> = collectionRef;
+
+      if (options) {
+        const constraints = [];
+
+        // 条件の追加
+        if (options.conditions) {
+          for (const [field, op, value] of options.conditions) {
+            constraints.push(where(field, op, value));
+          }
+        }
+
+        // ソート順の追加
+        if (options.orderBy) {
+          for (const [field, direction] of options.orderBy) {
+            constraints.push(orderBy(field, direction));
+          }
+        }
+
+        // 件数制限の追加
+        if (options.limit) {
+          constraints.push(firestoreLimit(options.limit));
+        }
+
+        queryRef = query(collectionRef, ...constraints);
+      }
+
+      return collectionFetcher<T>(queryRef);
+    } : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,

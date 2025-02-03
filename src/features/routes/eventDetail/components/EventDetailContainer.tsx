@@ -1,7 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Event, EventInteractionHistory } from '@/types/firestoreDocument';
+import {
+  Event,
+  EventInteractionHistory,
+  User,
+} from '@/types/firestoreDocument';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
@@ -10,7 +14,6 @@ import { Star } from 'lucide-react';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import {
   Timestamp,
-  addDoc,
   collection,
   query,
   orderBy,
@@ -29,8 +32,6 @@ interface Props {
   eventId: string;
 }
 
-type InteractionType = 'view' | 'like' | 'dislike' | 'kokoiku';
-
 export default function EventDetailContainer({ eventId }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -39,7 +40,9 @@ export default function EventDetailContainer({ eventId }: Props) {
     `events/${eventId}`
   );
 
-  const updateUserVector = async (interactionType: InteractionType) => {
+  const updateUserVector = async (
+    action: EventInteractionHistory['action']
+  ) => {
     if (!user || !event) return;
 
     // 既存のインタラクションを確認
@@ -54,24 +57,27 @@ export default function EventDetailContainer({ eventId }: Props) {
       limit(1)
     );
     const existingSnapshot = await getDocs(existingQuery);
-    const existingInteraction = existingSnapshot.docs[0]?.data()
-      ?.interactionType as InteractionType | undefined;
+    const existingInteraction = existingSnapshot.docs[0]?.data()?.action as
+      | EventInteractionHistory['action']
+      | undefined;
 
-    if (interactionType === 'view') {
+    if (action === 'view') {
       if (existingInteraction === 'kokoiku' || existingInteraction === 'like') {
         return; // 既に kokoiku の場合は何もしない
       }
     }
 
+    const newDoc: EventInteractionHistory = {
+      userId: user.uid,
+      eventId: event.id,
+      eventVector: event.eventVector,
+      action,
+      createdAt: Timestamp.now(),
+    };
+
     await setDoc(
       doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
-      {
-        userId: user.uid,
-        eventId: event.id,
-        eventVector: event.eventVector,
-        interactionType,
-        createdAt: Timestamp.now(),
-      }
+      newDoc
     );
 
     const historiesQuery = query(
@@ -86,14 +92,13 @@ export default function EventDetailContainer({ eventId }: Props) {
       ) as EventInteractionHistory[]
     );
 
-    await setDoc(
-      doc(db, `users/${user.uid}`),
-      {
-        userVector: vector(userVector),
-        updatedAt: Timestamp.now(),
-      },
-      { merge: true }
-    );
+    const newUserDoc: User = {
+      // @ts-expect-error  zod で vector を定義できない
+      preferenceVector: vector(userVector),
+      updatedAt: Timestamp.now(),
+    };
+
+    await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
   };
 
   useEffect(() => {

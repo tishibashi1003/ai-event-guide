@@ -50,7 +50,7 @@ export function PreferencesContainer() {
       eventId: event.id,
       eventVector: event.eventVector,
       action,
-      timestamp: Timestamp.now(),
+      createdAt: Timestamp.now(),
     };
     setInteractionHistory((prev) => [...prev, newHistory]);
   };

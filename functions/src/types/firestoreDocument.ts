@@ -13,7 +13,7 @@ export const EventSchema = z.object({
 
 export const UserSchema = z.object({
   uid: z.string(),
-  eventVector: z.array(z.number()).optional(),
+  preferenceVector: z.array(z.number()).optional(),
   createdAt: z.instanceof(Timestamp),
   updatedAt: z.instanceof(Timestamp)
 });
@@ -21,7 +21,7 @@ export const UserSchema = z.object({
 export const EventInteractionHistorySchema = z.object({
   userId: z.string(),
   eventId: z.string(),
-  action: z.enum(['like', 'dislike', 'kokoikku']),
+  action: z.enum(['like', 'dislike', 'kokoiku', 'view']),
   eventVector: z.array(z.number()),
   createdAt: z.instanceof(Timestamp)
 });
