@@ -28,7 +28,7 @@ export function PreferencesContainer() {
     error,
     isLoading,
   } = useFirestoreCollection<Event>('events', {
-    limit: 5,
+    limit: 10,
     orderBy: [['eventDate', 'asc']],
   });
 
