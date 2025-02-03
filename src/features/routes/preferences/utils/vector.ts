@@ -2,16 +2,17 @@ import { EventInteractionHistory } from "@/types/firestoreDocument";
 import { VectorValue } from "firebase/firestore";
 
 export const generateUserProfileVector = (histories: EventInteractionHistory[]): number[] => {
+  const likeHistory = histories.filter((history) => history.action === 'like');
   // イベントベクトルの重み付き平均を計算
-  const weightedVectors = histories.map((history, index) => {
+  const weightedVectors = likeHistory.map((history, index) => {
     let weight = 0;
     switch (history.action) {
       case 'like':
         weight = 1 / (index + 1) * 1.2; // like は少し高めの重み
         break;
-      case 'dislike':
-        weight = 1 / (index + 1) * 0.8; // dislike は少し低めの重み
-        break;
+      // case 'dislike':
+      //   weight = 1 / (index + 1) * 0.8; // dislike は少し低めの重み
+      //   break;
       case 'kokoikku':
         weight = 1 / (index + 1) * 1.5; // kokoikku は高めの重み
         break;
