@@ -1,16 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Event } from '@/types/firestoreDocument';
+import { Event, EventInteractionHistory } from '@/types/firestoreDocument';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
 import { Star } from 'lucide-react';
 import { useAuth } from '@/features/common/auth/AuthContext';
-import { Timestamp, addDoc, collection } from 'firebase/firestore';
+import {
+  Timestamp,
+  addDoc,
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+  doc,
+  setDoc,
+} from 'firebase/firestore';
 import { db } from '@/utils/firebase/config';
 import { toast } from '@/hooks/toast/useToast';
+import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
 
 interface Props {
   eventId: string;
@@ -46,6 +57,37 @@ export default function EventDetailContainer({ eventId }: Props) {
           createdAt: Timestamp.now(),
         }
       );
+
+      // 直近15件の履歴を取得
+      const historiesRef = collection(
+        db,
+        `users/${user.uid}/eventInteractionHistories`
+      );
+      const historiesQuery = query(
+        historiesRef,
+        orderBy('createdAt', 'desc'),
+        limit(15)
+      );
+      const historiesSnapshot = await getDocs(historiesQuery);
+
+      // ユーザーベクトルを生成
+      const userVector = generateUserProfileVector(
+        historiesSnapshot.docs.map((doc) =>
+          doc.data()
+        ) as EventInteractionHistory[]
+      );
+
+      // ユーザードキュメントを更新
+      const userRef = doc(db, `users/${user.uid}`);
+      await setDoc(
+        userRef,
+        {
+          userVector: userVector,
+          updatedAt: Timestamp.now(),
+        },
+        { merge: true }
+      );
+
       toast({
         title: 'ここいくに保存しました',
         description: 'マイページのここいくリストから確認できます',
@@ -109,7 +151,7 @@ export default function EventDetailContainer({ eventId }: Props) {
               <h2 className='text-lg font-semibold text-gray-900'>開催場所</h2>
               <p className='mt-2 text-gray-600'>{event.eventLocationNameJa}</p>
               <p className='mt-1 text-sm text-gray-500'>
-                {event.eventLocationCity}
+                {event.eventLocationCityJa}
               </p>
             </div>
 
