@@ -1,6 +1,6 @@
 import type React from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Users } from 'lucide-react';
+import { Calendar, MapPin, Building2 } from 'lucide-react';
 import { Event } from '@/types/firestoreDocument';
 import { formatDate } from '@/utils/day';
 
@@ -34,14 +34,21 @@ const VerticalCard: React.FC<VerticalCardProps> = ({ event, onClick }) => {
             {event.eventTitleJa}
           </h2>
 
-          <div className='flex items-center text-gray-600 text-sm'>
-            <Calendar className='w-4 h-4 mr-2 text-yellow-500' />
-            <span>{formatDate(event.eventDate.toDate())}</span>
+          <div className='flex items-center gap-4'>
+            <div className='flex items-center text-gray-600 text-sm'>
+              <Calendar className='w-4 h-4 mr-2 text-yellow-500' />
+              <span>{formatDate(event.eventDate.toDate())}</span>
+            </div>
+
+            <div className='flex items-center text-gray-600 text-sm'>
+              <Building2 className='w-4 h-4 mr-2 text-yellow-500' />
+              <span>{event.eventLocationCity}</span>
+            </div>
           </div>
 
           <div className='flex items-center text-gray-600 text-sm'>
-            <Users className='w-4 h-4 mr-2 text-yellow-500' />
-            <span>{event.eventLocationCity}</span>
+            <MapPin className='w-4 h-4 mr-2 text-yellow-500' />
+            <span>{event.eventLocationNameJa}</span>
           </div>
 
           <p className='text-gray-700 text-sm line-clamp-2'>
