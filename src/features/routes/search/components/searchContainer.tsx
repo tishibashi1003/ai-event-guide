@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { useFirestoreCollection } from '@/hooks/useFirestore';
+import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
 
 export default function SearchContainer() {
   const { user } = useAuth();
@@ -96,22 +97,14 @@ export default function SearchContainer() {
       }
 
       try {
-        const eventsRef = collection(db, 'events');
-        const eventsQuery = query(
-          eventsRef,
-          where(documentId(), 'in', similarEventsData.eventIds)
+        const eventsData = await docsFetcher<Event>(
+          'events',
+          similarEventsData.eventIds
         );
-        const eventsSnapshot = await getDocs(eventsQuery);
-
-        const eventsData = eventsSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Event[];
-
-        const sortedEvents = similarEventsData.eventIds
-          .map((id) => eventsData.find((event) => event.id === id))
-          .filter((event): event is Event => event !== undefined);
-
+        const sortedEvents = sortDocsByIds(
+          eventsData,
+          similarEventsData.eventIds
+        );
         setRecommendedEvents(sortedEvents);
       } catch (error) {
         console.error('おすすめイベントの取得中にエラーが発生しました:', error);

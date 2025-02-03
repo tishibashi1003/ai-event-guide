@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, DocumentReference, CollectionReference, DocumentData, query, where, orderBy, limit as firestoreLimit, Query, WhereFilterOp, OrderByDirection } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, DocumentReference, CollectionReference, DocumentData, query, where, orderBy, limit as firestoreLimit, Query, WhereFilterOp, OrderByDirection, documentId } from 'firebase/firestore';
 import useSWR, { mutate } from 'swr';
 import { db } from '@/utils/firebase/config';
 import { FirestoreError } from 'firebase/firestore';
@@ -33,7 +33,7 @@ export type QueryOptions = {
 };
 
 // Firestoreドキュメントを取得するためのフェッチャー
-const docFetcher = async <T>(docRef: DocumentReference) => {
+export const docFetcher = async <T>(docRef: DocumentReference) => {
   const snapshot = await getDoc(docRef);
   if (!snapshot.exists()) {
     throw new Error('Document does not exist');
@@ -41,9 +41,36 @@ const docFetcher = async <T>(docRef: DocumentReference) => {
   return snapshot.data() as T;
 };
 
+// 複数のドキュメントを取得するためのフェッチャー
+export const docsFetcher = async <T>(
+  collectionPath: string,
+  ids: string[]
+): Promise<(T & { id: string })[]> => {
+  if (!ids.length) return [];
+
+  const collectionRef = collection(db, collectionPath);
+  const q = query(collectionRef, where(documentId(), 'in', ids));
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  })) as (T & { id: string })[];
+};
+
+// IDの順序を維持しながらドキュメントをソートする
+export const sortDocsByIds = <T extends { id: string }>(
+  docs: T[],
+  ids: string[]
+): T[] => {
+  return ids
+    .map(id => docs.find(doc => doc.id === id))
+    .filter((doc): doc is T => doc !== undefined);
+};
+
 // Firestoreコレクションを取得するためのフェッチャー
-const collectionFetcher = async <T>(collectionRef: CollectionReference | Query) => {
-  const snapshot = await getDocs(collectionRef);
+const collectionFetcher = async <T>(queryRef: CollectionReference<DocumentData> | Query<DocumentData>) => {
+  const snapshot = await getDocs(queryRef);
   return snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
@@ -73,8 +100,8 @@ export function useFirestoreCollection<T>(
   path: string,
   options?: QueryOptions
 ) {
-  const collectionRef = collection(db, path);
-  let queryRef = collectionRef;
+  const collectionRef = collection(db, path) as CollectionReference<DocumentData>;
+  let queryRef: Query<DocumentData> = collectionRef;
 
   if (options) {
     const constraints = [];
