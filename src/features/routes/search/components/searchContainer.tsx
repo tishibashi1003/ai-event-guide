@@ -19,9 +19,11 @@ import { useAuth } from '@/features/common/auth/AuthContext';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { useFirestoreCollection } from '@/hooks/useFirestore';
 import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
+import { useRouter } from 'next/navigation';
 
 export default function SearchContainer() {
   const { user } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(
     'recommended'
   );
@@ -252,6 +254,7 @@ export default function SearchContainer() {
               <VerticalCard
                 key={event.id}
                 event={event}
+                onClick={() => router.push(`/event/${event.id}`)}
                 isRecommended={
                   activeTab === 'recommended'
                     ? recommendedEvents.some(
