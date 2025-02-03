@@ -28,7 +28,10 @@ export function PreferencesContainer() {
     data: events,
     error,
     isLoading,
-  } = useFirestoreCollection<Event>('events');
+  } = useFirestoreCollection<Event>('events', {
+    limit: 5,
+    orderBy: [['eventDate', 'asc']],
+  });
 
   const { set: setUserData } = useFirestoreUpdate(
     user ? `users/${user.uid}` : ''

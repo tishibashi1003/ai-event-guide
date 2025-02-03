@@ -8,7 +8,16 @@ import {
   useAnimation,
 } from 'framer-motion';
 import { Event } from '@/types/firestoreDocument';
-import { Calendar, Users } from 'lucide-react';
+import { Building2, Calendar, MapPin, Users } from 'lucide-react';
+
+// 日付を年月日形式に変換する関数
+const formatDateYYYYMMDD = (dateStr: string): string => {
+  const year = dateStr.substring(0, 4);
+  const month = dateStr.substring(4, 6);
+  const day = dateStr.substring(6, 8);
+  return `${year}年${month}月${day}日`;
+};
+
 interface SwipeCardProps {
   event: Event;
   onSwipe: (direction: 'left' | 'right') => void;
@@ -81,14 +90,21 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
           {event.eventTitleJa}
         </h2>
 
-        <div className='flex items-center text-gray-600'>
-          <Calendar className='w-5 h-5 mr-2 text-yellow-500' />
-          <span>{event.eventDateYYYYMMDD}</span>
+        <div className='flex items-center gap-4'>
+          <div className='flex items-center text-gray-600'>
+            <Calendar className='w-5 h-5 mr-2 text-yellow-500' />
+            <span>{formatDateYYYYMMDD(event.eventDateYYYYMMDD)}</span>
+          </div>
+
+          <div className='flex items-center text-gray-600'>
+            <Building2 className='w-5 h-5 mr-2 text-yellow-500' />
+            <span>{event.eventLocationCityJa}</span>
+          </div>
         </div>
 
-        <div className='flex items-center text-gray-600'>
-          <Users className='w-5 h-5 mr-2 text-yellow-500' />
-          <span>{event.eventLocationCity}</span>
+        <div className='flex items-center text-gray-600 text-sm'>
+          <MapPin className='w-4 h-4 mr-2 text-yellow-500' />
+          <span>{event.eventLocationNameJa}</span>
         </div>
 
         <p className='text-gray-700 line-clamp-3'>{event.eventDescriptionJa}</p>

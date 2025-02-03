@@ -52,7 +52,7 @@ const VerticalCard: React.FC<VerticalCardProps> = ({
 
             <div className='flex items-center text-gray-600 text-sm'>
               <Building2 className='w-4 h-4 mr-2 text-yellow-500' />
-              <span>{event.eventLocationCity}</span>
+              <span>{event.eventLocationCityJa}</span>
             </div>
           </div>
 

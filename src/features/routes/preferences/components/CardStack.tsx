@@ -55,7 +55,7 @@ const CardStack: React.FC<CardStackProps> = ({
           </div>
         )}
       </div>
-      <div className='flex justify-between items-center'>
+      <div className='flex justify-between items-center mt-6'>
         <footer className='flex justify-around items-center p-2 pt-6 max-w-md mx-auto w-full bg-white'>
           <button
             className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#FF3B30] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#FFEEEE] focus:outline-none focus:ring-2 focus:ring-[#FF3B30] focus:ring-opacity-50'
@@ -64,14 +64,6 @@ const CardStack: React.FC<CardStackProps> = ({
           >
             <X className='w-6 h-6' />
           </button>
-          {/* <button
-            className='w-auto h-16 px-6 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50'
-            onClick={() => triggerSwipe('right')}
-            disabled={isLastCard}
-          >
-            <Star className='w-6 h-6 mr-2 fill-current' />
-            ココいく！
-          </button> */}
           <button
             className='w-14 h-14 bg-white rounded-full flex items-center justify-center text-[#34C759] shadow-lg transition-all duration-300 hover:scale-105 hover:bg-[#EEFFF5] focus:outline-none focus:ring-2 focus:ring-[#34C759] focus:ring-opacity-50'
             onClick={() => triggerSwipe('right')}
