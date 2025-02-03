@@ -175,3 +175,46 @@ exports.addEventInteractionAndRecalculateUserPreference = onCall({
     throw new Error(error instanceof Error ? error.message : "Unknown error occurred");
   }
 });
+
+exports.findSimilarEvents = onCall({
+  region: "asia-northeast1",
+}, async (request) => {
+  const db = getFirestore();
+
+  try {
+    const { userId, limit = 10 } = request.data;
+
+    // ユーザードキュメントを取得
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) {
+      throw new Error("User not found");
+    }
+
+    const userData = userDoc.data();
+    if (!userData?.preferenceVector) {
+      throw new Error("User preference vector not found");
+    }
+
+    // イベントコレクションに対してベクトル検索を実行
+    const eventsCollection = db.collection("events");
+    const vectorQuery = eventsCollection.findNearest({
+      vectorField: 'eventVector',
+      queryVector: userData.preferenceVector,
+      limit,
+      distanceMeasure: 'EUCLIDEAN'
+    });
+
+    const querySnapshot = await vectorQuery.get();
+
+    // イベントIDのリストを返す
+    const eventIds = querySnapshot.docs.map(doc => doc.id);
+
+    return {
+      success: true,
+      eventIds,
+    };
+  } catch (error) {
+    console.error("Error finding similar events:", error);
+    throw new Error(error instanceof Error ? error.message : "Unknown error occurred");
+  }
+});

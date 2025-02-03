@@ -6,48 +6,26 @@ import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
-import { Timestamp } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { db } from '@/utils/firebase/config';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  documentId,
+} from 'firebase/firestore';
+import { useAuth } from '@/features/common/auth/AuthContext';
 
 export default function SearchContainer() {
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
-  const [searchResults, setSearchResults] = useState<Event[]>([
-    {
-      id: '1',
-      eventVector: [1, 2, 3],
-      eventTitleJa: 'イベントタイトル',
-      eventDescriptionJa: 'イベント詳細',
-      eventDateYYYYMMDD: '2025-01-01',
-      eventLocationNameJa: 'イベント場所',
-      eventLocationCity: 'イベント場所',
-      eventSourceUrl: 'https://example.com',
-      eventEmoji: '🎉',
-      eventCategoryEn: 'event',
-      eventDate: Timestamp.now(),
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    },
-    {
-      id: '2',
-      eventVector: [4, 5, 6],
-      eventTitleJa: 'イベントタイトル2',
-      eventDescriptionJa: 'イベント詳細2',
-      eventDateYYYYMMDD: '2025-01-02',
-      eventLocationNameJa: 'イベント場所2',
-      eventLocationCity: 'イベント場所2',
-      eventSourceUrl: 'https://example.com',
-      eventEmoji: '🎉',
-      eventCategoryEn: 'event',
-      eventDate: Timestamp.now(),
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
-    },
-  ]);
+  const [searchResults, setSearchResults] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const events = activeTab === 'weekend' ? searchResults : searchResults;
-
   const currentEvent = events.length > 0 ? events[currentIndex] : null;
 
   useEffect(() => {
@@ -56,16 +34,51 @@ export default function SearchContainer() {
 
   useEffect(() => {
     async function fetchSearchResult() {
+      if (!user) return;
+
       setIsLoading(true);
       try {
+        // Cloud Functionsのインスタンスを取得
+        const functions = getFunctions();
+        functions.region = 'asia-northeast1';
+        const findSimilarEvents = httpsCallable(functions, 'findSimilarEvents');
+
+        // 類似イベントのIDを取得
+        const result = await findSimilarEvents({ userId: user.uid });
+        const data = result.data as { success: boolean; eventIds: string[] };
+
+        if (data.success && data.eventIds.length > 0) {
+          // Firestoreからイベント詳細を取得
+          const eventsRef = collection(db, 'events');
+          const eventsQuery = query(
+            eventsRef,
+            where(documentId(), 'in', data.eventIds)
+          );
+          const eventsSnapshot = await getDocs(eventsQuery);
+
+          const eventsData = eventsSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Event[];
+
+          // イベントIDの順序を維持するためにソート
+          const sortedEvents = data.eventIds
+            .map((id) => eventsData.find((event) => event.id === id))
+            .filter((event): event is Event => event !== undefined);
+
+          setSearchResults(sortedEvents);
+        } else {
+          setSearchResults([]);
+        }
       } catch (error) {
         console.error('イベント検索中にエラーが発生しました:', error);
+        setSearchResults([]);
       } finally {
         setIsLoading(false);
       }
     }
     fetchSearchResult();
-  }, []);
+  }, [user]);
 
   if (showDetail && currentEvent) {
     return (
@@ -85,7 +98,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('weekend')}
           >
-            もうすぐ
+            おすすめ
           </button>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
@@ -95,7 +108,7 @@ export default function SearchContainer() {
             }`}
             onClick={() => setActiveTab('custom')}
           >
-            おすすめ
+            ぜんぶ
           </button>
         </div>
       </header>
