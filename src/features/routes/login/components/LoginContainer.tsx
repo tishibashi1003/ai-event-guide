@@ -7,10 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
-import {
-  useFirestoreCollectionUpdate,
-  useFirestoreDoc,
-} from '@/hooks/useFirestore';
+import { useFirestoreCollectionUpdate } from '@/hooks/useFirestore';
 import { Timestamp } from 'firebase/firestore';
 import type { User } from '@/types/firestoreDocument';
 import { doc, getDoc } from 'firebase/firestore';
