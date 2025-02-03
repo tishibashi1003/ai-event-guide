@@ -7,7 +7,6 @@ import CardStack from './CardStack';
 import {
   useFirestoreCollection,
   useFirestoreUpdate,
-  useFirestoreCollectionUpdate,
 } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
 import { PreferenceCalculation } from './PreferenceCalculation';
@@ -37,9 +36,8 @@ export function PreferencesContainer() {
     user ? `users/${user.uid}` : ''
   );
 
-  const { add: addInteraction } = useFirestoreCollectionUpdate(
-    user ? `users/${user.uid}/eventInteractionHistories` : ''
-  );
+  const getInteractionPath = (eventId: string) =>
+    user ? `users/${user.uid}/eventInteractionHistories/${eventId}` : '';
 
   const handleSwipe = async (direction: 'left' | 'right') => {
     if (!events || currentIndex >= events.length || !user) return;
@@ -62,7 +60,10 @@ export function PreferencesContainer() {
 
     try {
       for (const history of interactionHistory) {
-        await addInteraction({
+        const { set: setInteraction } = useFirestoreUpdate(
+          getInteractionPath(history.eventId)
+        );
+        await setInteraction({
           ...history,
           eventVector: history.eventVector,
           createdAt: Timestamp.now(),
@@ -85,7 +86,7 @@ export function PreferencesContainer() {
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
-  }, [interactionHistory, user, router, setUserData, addInteraction]);
+  }, [interactionHistory, user, router, setUserData]);
 
   useEffect(() => {
     if (events && currentIndex >= (events?.length ?? 0)) {

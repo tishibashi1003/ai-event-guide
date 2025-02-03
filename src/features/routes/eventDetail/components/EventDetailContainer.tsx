@@ -18,6 +18,8 @@ import {
   getDocs,
   doc,
   setDoc,
+  where,
+  vector,
 } from 'firebase/firestore';
 import { db } from '@/utils/firebase/config';
 import { toast } from '@/hooks/toast/useToast';
@@ -27,6 +29,8 @@ interface Props {
   eventId: string;
 }
 
+type InteractionType = 'view' | 'like' | 'dislike' | 'kokoiku';
+
 export default function EventDetailContainer({ eventId }: Props) {
   const router = useRouter();
   const { user } = useAuth();
@@ -35,59 +39,87 @@ export default function EventDetailContainer({ eventId }: Props) {
     `events/${eventId}`
   );
 
+  const updateUserVector = async (interactionType: InteractionType) => {
+    if (!user || !event) return;
+
+    // 既存のインタラクションを確認
+    const historiesRef = collection(
+      db,
+      `users/${user.uid}/eventInteractionHistories`
+    );
+    const existingQuery = query(
+      historiesRef,
+      where('eventId', '==', event.id),
+      orderBy('createdAt', 'desc'),
+      limit(1)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    const existingInteraction = existingSnapshot.docs[0]?.data()
+      ?.interactionType as InteractionType | undefined;
+
+    if (interactionType === 'view') {
+      if (existingInteraction === 'kokoiku' || existingInteraction === 'like') {
+        return; // 既に kokoiku の場合は何もしない
+      }
+    }
+
+    await setDoc(
+      doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
+      {
+        userId: user.uid,
+        eventId: event.id,
+        eventVector: event.eventVector,
+        interactionType,
+        createdAt: Timestamp.now(),
+      }
+    );
+
+    const historiesQuery = query(
+      historiesRef,
+      orderBy('createdAt', 'desc'),
+      limit(15)
+    );
+    const historiesSnapshot = await getDocs(historiesQuery);
+    const userVector = generateUserProfileVector(
+      historiesSnapshot.docs.map((doc) =>
+        doc.data()
+      ) as EventInteractionHistory[]
+    );
+
+    await setDoc(
+      doc(db, `users/${user.uid}`),
+      {
+        userVector: vector(userVector),
+        updatedAt: Timestamp.now(),
+      },
+      { merge: true }
+    );
+  };
+
   useEffect(() => {
     if (!isLoading && !event) {
       console.error('イベントが見つかりません');
       router.push('/search');
+      return;
     }
-  }, [event, isLoading, router]);
+
+    const recordView = async () => {
+      try {
+        await updateUserVector('view');
+      } catch (error) {
+        console.error('閲覧履歴の記録中にエラーが発生しました:', error);
+      }
+    };
+
+    recordView();
+  }, [user, event, isLoading, router]);
 
   const handleGoingClick = async () => {
     if (!user || !event || isProcessing) return;
 
     try {
       setIsProcessing(true);
-      await addDoc(
-        collection(db, `users/${user.uid}/eventInteractionHistories`),
-        {
-          userId: user.uid,
-          eventId: event.id,
-          eventVector: event.eventVector,
-          interactionType: 'kokoiku',
-          createdAt: Timestamp.now(),
-        }
-      );
-
-      // 直近15件の履歴を取得
-      const historiesRef = collection(
-        db,
-        `users/${user.uid}/eventInteractionHistories`
-      );
-      const historiesQuery = query(
-        historiesRef,
-        orderBy('createdAt', 'desc'),
-        limit(15)
-      );
-      const historiesSnapshot = await getDocs(historiesQuery);
-
-      // ユーザーベクトルを生成
-      const userVector = generateUserProfileVector(
-        historiesSnapshot.docs.map((doc) =>
-          doc.data()
-        ) as EventInteractionHistory[]
-      );
-
-      // ユーザードキュメントを更新
-      const userRef = doc(db, `users/${user.uid}`);
-      await setDoc(
-        userRef,
-        {
-          userVector: userVector,
-          updatedAt: Timestamp.now(),
-        },
-        { merge: true }
-      );
-
+      await updateUserVector('kokoiku');
       toast({
         title: 'ここいくに保存しました',
         description: 'マイページのここいくリストから確認できます',
