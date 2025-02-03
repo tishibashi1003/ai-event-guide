@@ -50,7 +50,6 @@ export default function SearchContainer() {
         ['eventDate', '<=', endTimestamp],
       ],
       orderBy: [['eventDate', 'asc']],
-      limit: 20,
     });
 
   const events =
@@ -78,11 +77,10 @@ export default function SearchContainer() {
           userId: user.uid,
           startDate,
           endDate,
+          limit: 5,
         }
       : null
   );
-
-  console.log('🚀  SearchContainer  data:', weeklyEvents, similarEventsData);
 
   useEffect(() => {
     setCurrentIndex(0);
@@ -152,6 +150,12 @@ export default function SearchContainer() {
             ぜんぶ
           </button>
         </div>
+        {activeTab === 'weekend' && (
+          <p className='mt-3 text-xs text-gray-300 text-center'>
+            <span className='text-yellow-300 font-medium'>Pick Up </span>=
+            あなたの興味に合わせたおすすめ
+          </p>
+        )}
       </header>
 
       <main className='flex-1 overflow-hidden'>
