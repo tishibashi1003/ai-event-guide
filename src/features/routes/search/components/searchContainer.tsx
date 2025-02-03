@@ -127,7 +127,7 @@ export default function SearchContainer() {
             nextDay.setDate(nextDay.getDate() + 1);
             return nextDay.toISOString().split('T')[0];
           })(),
-          limit: 10,
+          limit: 5,
         }
       : null
   );
