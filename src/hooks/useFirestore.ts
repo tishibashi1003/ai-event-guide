@@ -46,11 +46,10 @@ const collectionFetcher = async <T>(collectionRef: CollectionReference) => {
 };
 
 // 単一ドキュメントを取得するためのフック
-export function useFirestoreDoc<T>(path: string) {
-  const docRef = doc(db, path);
+export function useFirestoreDoc<T>(path: string | undefined) {
   const { data, error, isLoading } = useSWR(
     path ? ['doc', path] : null,
-    () => docFetcher<T>(docRef),
+    path ? () => docFetcher<T>(doc(db, path)) : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
