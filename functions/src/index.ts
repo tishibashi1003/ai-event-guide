@@ -55,9 +55,9 @@ exports.scheduledGetEventFunction = onSchedule({
       const docRef = eventsCollection.doc(docId);
 
       // イベントの各フィールドを個別にベクトル化
-      const titleVector = await genkitInstance.embed({
+      const eventVector = await genkitInstance.embed({
         embedder: textEmbedding004,
-        content: `${event.eventTitleEn} ${event.eventLocationCityEn} ${event.eventLocationNameEn}`,
+        content: `${event.eventCategoryEn} ${event.eventLocationCityEn}`,
       });
 
       const eventData: Event = {
@@ -65,7 +65,7 @@ exports.scheduledGetEventFunction = onSchedule({
         ...event,
         eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
         // @ts-ignore vector が zod で定義されていないため
-        eventVector: FieldValue.vector(titleVector),
+        eventVector: FieldValue.vector(eventVector),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       }
