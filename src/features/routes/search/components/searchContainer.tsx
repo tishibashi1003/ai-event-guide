@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import SearchLoading from './searchLoading';
-import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
 import { db } from '@/utils/firebase/config';
@@ -23,8 +22,6 @@ import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
 
 export default function SearchContainer() {
   const { user } = useAuth();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(
     'recommended'
   );
@@ -97,7 +94,6 @@ export default function SearchContainer() {
               )
           ),
         ];
-  const currentEvent = events.length > 0 ? events[currentIndex] : null;
 
   // Cloud Functionsの呼び出し（今週のおすすめイベント）
   const {
@@ -133,10 +129,6 @@ export default function SearchContainer() {
         }
       : null
   );
-
-  useEffect(() => {
-    setCurrentIndex(0);
-  }, []);
 
   // おすすめイベントデータの取得（今週）
   useEffect(() => {
@@ -205,12 +197,6 @@ export default function SearchContainer() {
     );
   }
 
-  if (showDetail && currentEvent) {
-    return (
-      <EventDetail event={currentEvent} onBack={() => setShowDetail(false)} />
-    );
-  }
-
   const isLoading =
     isLoadingRecommended ||
     isLoadingAllRecommended ||
@@ -260,13 +246,12 @@ export default function SearchContainer() {
           <div className='flex flex-col items-center justify-center h-full space-y-4'>
             <SearchLoading />
           </div>
-        ) : currentEvent ? (
+        ) : events.length > 0 ? (
           <div className='h-full px-4 pb-4 overflow-y-auto'>
             {events.map((event) => (
               <VerticalCard
                 key={event.id}
                 event={event}
-                onClick={() => setShowDetail(true)}
                 isRecommended={
                   activeTab === 'recommended'
                     ? recommendedEvents.some(
