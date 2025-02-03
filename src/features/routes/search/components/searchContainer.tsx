@@ -6,7 +6,6 @@ import EventDetail from '@/features/routes/eventDetail/components/event-detail';
 import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
-import { getFunctions, httpsCallable } from 'firebase/functions';
 import { db } from '@/utils/firebase/config';
 import {
   collection,
@@ -16,6 +15,7 @@ import {
   documentId,
 } from 'firebase/firestore';
 import { useAuth } from '@/features/common/auth/AuthContext';
+import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 
 export default function SearchContainer() {
   const { user } = useAuth();
@@ -23,75 +23,78 @@ export default function SearchContainer() {
   const [showDetail, setShowDetail] = useState(false);
   const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
   const [searchResults, setSearchResults] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   const events = activeTab === 'weekend' ? searchResults : searchResults;
   const currentEvent = events.length > 0 ? events[currentIndex] : null;
+
+  // 日付範囲の設定（今日から7日後まで）
+  const today = new Date();
+  const nextWeek = new Date(today);
+  nextWeek.setDate(today.getDate() + 7);
+
+  // ISO文字列に変換（YYYY-MM-DD形式）
+  const startDate = today.toISOString().split('T')[0];
+  const endDate = nextWeek.toISOString().split('T')[0];
+
+  // Cloud Functionsの呼び出し
+  const {
+    data: similarEventsData,
+    error,
+    isLoading,
+  } = useFindSimilarEvents(
+    user
+      ? {
+          userId: user.uid,
+          startDate,
+          endDate,
+        }
+      : null
+  );
 
   useEffect(() => {
     setCurrentIndex(0);
   }, []);
 
+  // イベントデータの取得
   useEffect(() => {
-    async function fetchSearchResult() {
-      if (!user) return;
-
-      setIsLoading(true);
-      try {
-        // Cloud Functionsのインスタンスを取得
-        const functions = getFunctions();
-        functions.region = 'asia-northeast1';
-        const findSimilarEvents = httpsCallable(functions, 'findSimilarEvents');
-
-        // 日付範囲の設定（今日から7日後まで）
-        const today = new Date();
-        const nextWeek = new Date(today);
-        nextWeek.setDate(today.getDate() + 7);
-
-        // ISO文字列に変換（YYYY-MM-DD形式）
-        const startDate = today.toISOString().split('T')[0];
-        const endDate = nextWeek.toISOString().split('T')[0];
-
-        // 類似イベントのIDを取得
-        const result = await findSimilarEvents({
-          userId: user.uid,
-          startDate,
-          endDate,
-        });
-        const data = result.data as { success: boolean; eventIds: string[] };
-
-        if (data.success && data.eventIds.length > 0) {
-          // Firestoreからイベント詳細を取得
-          const eventsRef = collection(db, 'events');
-          const eventsQuery = query(
-            eventsRef,
-            where(documentId(), 'in', data.eventIds)
-          );
-          const eventsSnapshot = await getDocs(eventsQuery);
-
-          const eventsData = eventsSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Event[];
-
-          // イベントIDの順序を維持するためにソート
-          const sortedEvents = data.eventIds
-            .map((id) => eventsData.find((event) => event.id === id))
-            .filter((event): event is Event => event !== undefined);
-
-          setSearchResults(sortedEvents);
-        } else {
-          setSearchResults([]);
-        }
-      } catch (error) {
-        console.error('イベント検索中にエラーが発生しました:', error);
+    async function fetchEventDetails() {
+      if (!similarEventsData?.success || !similarEventsData.eventIds.length) {
         setSearchResults([]);
-      } finally {
-        setIsLoading(false);
+        return;
+      }
+
+      try {
+        // Firestoreからイベント詳細を取得
+        const eventsRef = collection(db, 'events');
+        const eventsQuery = query(
+          eventsRef,
+          where(documentId(), 'in', similarEventsData.eventIds)
+        );
+        const eventsSnapshot = await getDocs(eventsQuery);
+
+        const eventsData = eventsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Event[];
+
+        // イベントIDの順序を維持するためにソート
+        const sortedEvents = similarEventsData.eventIds
+          .map((id) => eventsData.find((event) => event.id === id))
+          .filter((event): event is Event => event !== undefined);
+
+        setSearchResults(sortedEvents);
+      } catch (error) {
+        console.error('イベント詳細の取得中にエラーが発生しました:', error);
+        setSearchResults([]);
       }
     }
-    fetchSearchResult();
-  }, [user]);
+
+    fetchEventDetails();
+  }, [similarEventsData]);
+
+  if (error) {
+    console.error('イベント検索中にエラーが発生しました:', error);
+  }
 
   if (showDetail && currentEvent) {
     return (
