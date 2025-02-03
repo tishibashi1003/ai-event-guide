@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import SearchLoading from './searchLoading';
 import EventDetail from '@/features/routes/eventDetail/components/event-detail';
-import CardStack from './CardStack';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
 import { db } from '@/utils/firebase/config';
