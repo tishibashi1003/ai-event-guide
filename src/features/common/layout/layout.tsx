@@ -28,7 +28,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
 
   const menuItems = [
     { path: '/search', label: 'さがす', icon: Search },
-    { path: '/favorites', label: 'ココいく', icon: Star },
+    { path: '/kokoiku', label: 'ココいく', icon: Star },
     { path: '/profile', label: 'プロフィール', icon: User },
   ];
 

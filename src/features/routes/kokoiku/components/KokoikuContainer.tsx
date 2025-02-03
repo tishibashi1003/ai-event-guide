@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { MapPin, Calendar, Users, Tag } from 'lucide-react';
 import { kokoIkuListEvents } from '../type';
 
-export default function KokoIkuList() {
+export default function KokoikuContainer() {
   return (
     <div className='flex flex-col min-h-screen bg-white'>
       <header className='flex items-center justify-between p-4 border-b border-gray-100'>

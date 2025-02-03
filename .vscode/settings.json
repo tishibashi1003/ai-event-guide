@@ -3,6 +3,7 @@
     "Firestore",
     "genkit",
     "kokoikku",
+    "Kokoiku",
     "vertexai"
   ]
 }
