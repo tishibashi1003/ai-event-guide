@@ -30,6 +30,7 @@ export default function SearchContainer() {
     'recommended'
   );
   const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
+  const [allRecommendedEvents, setAllRecommendedEvents] = useState<Event[]>([]);
   const [dateRange, setDateRange] = useState<{
     startDate: string;
     endDate: string;
@@ -68,6 +69,15 @@ export default function SearchContainer() {
       orderBy: [['eventDate', 'asc']],
     });
 
+  // 今後のイベントデータの取得
+  const { data: futureEvents = [], isLoading: isLoadingFuture } =
+    useFirestoreCollection<Event>('events', {
+      conditions: dateRange.startDate
+        ? [['eventDate', '>=', dateRange.endTimestamp]]
+        : [],
+      orderBy: [['eventDate', 'asc']],
+    });
+
   const events =
     activeTab === 'recommended'
       ? [
@@ -79,13 +89,21 @@ export default function SearchContainer() {
               )
           ),
         ]
-      : [...recommendedEvents, ...weeklyEvents];
+      : [
+          ...allRecommendedEvents,
+          ...futureEvents.filter(
+            (futureEvent) =>
+              !allRecommendedEvents.some(
+                (recEvent) => recEvent.id === futureEvent.id
+              )
+          ),
+        ];
   const currentEvent = events.length > 0 ? events[currentIndex] : null;
 
-  // Cloud Functionsの呼び出し（おすすめイベント）
+  // Cloud Functionsの呼び出し（今週のおすすめイベント）
   const {
     data: similarEventsData,
-    error,
+    error: weeklyError,
     isLoading: isLoadingRecommended,
   } = useFindSimilarEvents(
     user && dateRange.startDate
@@ -98,11 +116,30 @@ export default function SearchContainer() {
       : null
   );
 
+  // Cloud Functionsの呼び出し（今後のおすすめイベント）
+  const {
+    data: allSimilarEventsData,
+    error: allError,
+    isLoading: isLoadingAllRecommended,
+  } = useFindSimilarEvents(
+    user && dateRange.endDate
+      ? {
+          userId: user.uid,
+          startDate: (() => {
+            const nextDay = new Date(dateRange.endDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            return nextDay.toISOString().split('T')[0];
+          })(),
+          limit: 10,
+        }
+      : null
+  );
+
   useEffect(() => {
     setCurrentIndex(0);
   }, []);
 
-  // おすすめイベントデータの取得
+  // おすすめイベントデータの取得（今週）
   useEffect(() => {
     async function fetchRecommendedEvents() {
       if (!similarEventsData?.success || !similarEventsData.eventIds.length) {
@@ -129,8 +166,44 @@ export default function SearchContainer() {
     fetchRecommendedEvents();
   }, [similarEventsData]);
 
-  if (error) {
-    console.error('イベント検索中にエラーが発生しました:', error);
+  // おすすめイベントデータの取得（今後）
+  useEffect(() => {
+    async function fetchAllRecommendedEvents() {
+      if (
+        !allSimilarEventsData?.success ||
+        !allSimilarEventsData.eventIds.length
+      ) {
+        setAllRecommendedEvents([]);
+        return;
+      }
+
+      try {
+        const eventsData = await docsFetcher<Event>(
+          'events',
+          allSimilarEventsData.eventIds
+        );
+        const sortedEvents = sortDocsByIds(
+          eventsData,
+          allSimilarEventsData.eventIds
+        );
+        setAllRecommendedEvents(sortedEvents);
+      } catch (error) {
+        console.error(
+          '今後のおすすめイベントの取得中にエラーが発生しました:',
+          error
+        );
+        setAllRecommendedEvents([]);
+      }
+    }
+
+    fetchAllRecommendedEvents();
+  }, [allSimilarEventsData]);
+
+  if (weeklyError || allError) {
+    console.error(
+      'イベント検索中にエラーが発生しました:',
+      weeklyError || allError
+    );
   }
 
   if (showDetail && currentEvent) {
@@ -139,7 +212,11 @@ export default function SearchContainer() {
     );
   }
 
-  const isLoading = isLoadingRecommended || isLoadingWeekly;
+  const isLoading =
+    isLoadingRecommended ||
+    isLoadingAllRecommended ||
+    isLoadingWeekly ||
+    isLoadingFuture;
 
   return (
     <div className='flex flex-col h-screen max-w-sm mx-auto'>
@@ -174,7 +251,7 @@ export default function SearchContainer() {
         )}
         {activeTab === 'all' && (
           <p className='mt-3 text-xs text-gray-300 text-center'>
-            今週のおすすめタブ以降に開催予定のイベント
+            今週のおすすめ以降に開催予定のイベント
           </p>
         )}
       </header>
@@ -185,22 +262,24 @@ export default function SearchContainer() {
             <SearchLoading />
           </div>
         ) : currentEvent ? (
-          activeTab === 'recommended' ? (
-            <div className='h-full px-4 pb-4 overflow-y-auto'>
-              {events.map((event) => (
-                <VerticalCard
-                  key={event.id}
-                  event={event}
-                  onClick={() => setShowDetail(true)}
-                  isRecommended={recommendedEvents.some(
-                    (recEvent) => recEvent.id === event.id
-                  )}
-                />
-              ))}
-            </div>
-          ) : (
-            <CardStack events={events} />
-          )
+          <div className='h-full px-4 pb-4 overflow-y-auto'>
+            {events.map((event) => (
+              <VerticalCard
+                key={event.id}
+                event={event}
+                onClick={() => setShowDetail(true)}
+                isRecommended={
+                  activeTab === 'recommended'
+                    ? recommendedEvents.some(
+                        (recEvent) => recEvent.id === event.id
+                      )
+                    : allRecommendedEvents.some(
+                        (recEvent) => recEvent.id === event.id
+                      )
+                }
+              />
+            ))}
+          </div>
         ) : (
           <div className='flex items-center justify-center h-full text-center text-[#808080]'>
             <div>
