@@ -35,6 +35,8 @@ export const eventSearchPrompt = async (
     - eventCategoryEn は英単語1語で返すこと
       - 例)
         - Art
+    - eventLocation はイベントの施設名称
+    - eventLocationCity は市区町村名
 
     ## 検索条件
     - {{prefecture}} {{targetDate}}

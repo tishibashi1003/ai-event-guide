@@ -6,10 +6,8 @@ import { getGenkitInstance } from "./utils/genkit";
 import { gemini15Flash, textEmbedding004 } from "@genkit-ai/vertexai";
 import { eventSearchPrompt } from "./prompts/eventSearch";
 import { convertYYYYMMDDToTimestamp } from "./utils/date";
-import { Event, EventInteractionHistory, EventSchema } from "./types/firestoreDocument";
-import { generateUserProfileVector } from "./utils/vector";
+import { Event } from "./types/firestoreDocument";
 import { OutputEventSchema } from "./types/prompt";
-import { EventInteractionInputSchema } from "./types/params";
 
 initializeApp();
 
@@ -38,7 +36,6 @@ exports.scheduledGetEventFunction = onSchedule({
       return `${year}年${month}月${day}日`;
     };
 
-    // 各都道府県のイベントを検索
     const prefectureEvents = await eventSearchPrompt(genkitInstance, {
       address: {
         prefecture: "岐阜県",
@@ -53,25 +50,25 @@ exports.scheduledGetEventFunction = onSchedule({
 
     // 新しいイベントを追加
     for (const event of parsedEventResult) {
-      const docRef = eventsCollection.doc();
+      // イベントIDを生成（例：event-{eventTitleEn}-{eventDateYYYYMMDD}）
+      const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+      const docRef = eventsCollection.doc(docId);
 
-      // イベントの説明文からベクトルを生成
-      const eventText = `${event.eventTitleJa}\n${event.eventDescriptionJa}\n${event.eventLocationNameJa}\n${event.eventCategoryEn}\n${event.eventLocationCity}`;
-      const vector = await genkitInstance.embed({
+      // イベントの各フィールドを個別にベクトル化
+      const titleVector = await genkitInstance.embed({
         embedder: textEmbedding004,
-        content: eventText,
+        content: `${event.eventTitleEn} ${event.eventLocationCityEn} ${event.eventLocationNameEn}`,
       });
 
       const eventData: Event = {
-        id: docRef.id,
+        id: docId, // docRef.id から docId に変更
         ...event,
         eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
         // @ts-ignore vector が zod で定義されていないため
-        eventVector: FieldValue.vector(vector),
+        eventVector: FieldValue.vector(titleVector),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       }
-
 
       batch.set(docRef, eventData);
     }

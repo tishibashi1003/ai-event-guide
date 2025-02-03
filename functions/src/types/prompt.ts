@@ -6,14 +6,18 @@ import { z } from "zod";
 export const OutputEventSchema = z.object({
   /** イベントのタイトル */
   eventTitleJa: z.string(),
+  eventTitleEn: z.string(),
   /** イベントの詳細説明 */
   eventDescriptionJa: z.string(),
+  eventDescriptionEn: z.string(),
   /** イベントの日時（YYYY-MM-DD HH:mm:ss形式） */
   eventDateYYYYMMDD: z.string(),
   /** イベントの開催場所名 */
   eventLocationNameJa: z.string(),
+  eventLocationNameEn: z.string(),
   /** イベントの開催場所の市区町村 */
-  eventLocationCity: z.string(),
+  eventLocationCityJa: z.string(),
+  eventLocationCityEn: z.string(),
   /** イベントのURL */
   eventSourceUrl: z.string(),
   /** イベントのアイコン */
