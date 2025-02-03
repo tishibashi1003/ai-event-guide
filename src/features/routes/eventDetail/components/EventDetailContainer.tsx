@@ -27,6 +27,8 @@ import {
 import { db } from '@/utils/firebase/config';
 import { toast } from '@/hooks/toast/useToast';
 import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
+import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
+import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
 
 interface Props {
   eventId: string;
@@ -36,9 +38,48 @@ export default function EventDetailContainer({ eventId }: Props) {
   const router = useRouter();
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
+  const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
   const { data: event, isLoading } = useFirestoreDoc<Event>(
     `events/${eventId}`
   );
+
+  // 類似イベントの取得
+  const { data: similarEventsData } = useFindSimilarEvents(
+    event
+      ? {
+          userId: user?.uid || 'anonymous',
+          startDate: event.eventDate.toDate().toISOString().split('T')[0],
+          limit: 5,
+        }
+      : null
+  );
+
+  // 類似イベントデータの取得
+  useEffect(() => {
+    async function fetchSimilarEvents() {
+      if (!similarEventsData?.success || !similarEventsData.eventIds.length) {
+        setSimilarEvents([]);
+        return;
+      }
+
+      try {
+        const eventsData = await docsFetcher<Event>(
+          'events',
+          similarEventsData.eventIds
+        );
+        const sortedEvents = sortDocsByIds(
+          eventsData,
+          similarEventsData.eventIds
+        );
+        setSimilarEvents(sortedEvents);
+      } catch (error) {
+        console.error('類似イベントの取得中にエラーが発生しました:', error);
+        setSimilarEvents([]);
+      }
+    }
+
+    fetchSimilarEvents();
+  }, [similarEventsData]);
 
   const updateUserVector = async (
     action: EventInteractionHistory['action']
@@ -190,7 +231,7 @@ export default function EventDetailContainer({ eventId }: Props) {
               </p>
             </div>
 
-            <div className='flex justify-center mt-4'>
+            <div className='flex justify-center mt-6'>
               <button
                 onClick={handleGoingClick}
                 disabled={isProcessing || !user}
@@ -200,6 +241,48 @@ export default function EventDetailContainer({ eventId }: Props) {
                 {isProcessing ? '処理中...' : 'ココいく！'}
               </button>
             </div>
+
+            {/* 類似イベント */}
+            {similarEvents.length > 0 && (
+              <div className='mt-12'>
+                <h2 className='text-xl font-semibold text-gray-900 mb-4 mt-24'>
+                  他のおすすめイベント
+                </h2>
+                <div className='space-y-4'>
+                  {similarEvents.map((similarEvent) => (
+                    <div
+                      key={similarEvent.id}
+                      onClick={() => router.push(`/event/${similarEvent.id}`)}
+                      className='p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200'
+                    >
+                      <div className='flex items-start'>
+                        <div className='text-2xl mr-3'>
+                          {similarEvent.eventEmoji}
+                        </div>
+                        <div className='flex-1'>
+                          <h3 className='font-semibold text-gray-900'>
+                            {similarEvent.eventTitleJa}
+                          </h3>
+                          <p className='text-sm text-gray-600 mt-1'>
+                            {similarEvent.eventDate
+                              .toDate()
+                              .toLocaleDateString('ja-JP', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                weekday: 'long',
+                              })}
+                          </p>
+                          <p className='text-sm text-gray-500 mt-1'>
+                            {similarEvent.eventLocationNameJa}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
