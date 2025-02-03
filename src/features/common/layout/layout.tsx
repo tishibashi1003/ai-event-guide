@@ -2,7 +2,7 @@
 
 import type React from 'react';
 import { useState } from 'react';
-import { Search, Star, User } from 'lucide-react';
+import { Search, Star, User, Heart, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
 import LogoHorizontal from '@/components/logo/LogoHorizontal';
@@ -29,7 +29,7 @@ export default function Layout({ children, currentPath }: LayoutProps) {
   const menuItems = [
     { path: '/search', label: 'さがす', icon: Search },
     { path: '/kokoiku', label: 'ココいく', icon: Star },
-    { path: '/profile', label: 'プロフィール', icon: User },
+    { path: '/settings', label: '設定', icon: Settings },
   ];
 
   return (

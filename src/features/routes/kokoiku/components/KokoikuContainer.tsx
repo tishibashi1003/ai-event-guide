@@ -47,26 +47,11 @@ export default function KokoikuContainer() {
   );
   const pastEvents = events?.filter((event) => event.eventDate.toDate() < now);
 
-  if (!user && !authLoading) {
-    return (
-      <div className='flex flex-col min-h-screen bg-white'>
-        <header className='flex items-center justify-between p-4 border-b border-gray-100'>
-          <h1 className='text-2xl font-bold text-[#FFD700]'>ココいくリスト</h1>
-        </header>
-        <main className='flex-1 p-4'>
-          <div className='flex flex-col items-center justify-center h-full text-gray-500'>
-            <p>ログインしてください</p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return (
       <div className='flex flex-col min-h-screen bg-white'>
         <header className='flex items-center justify-between p-4 border-b border-gray-100'>
-          <h1 className='text-2xl font-bold text-[#FFD700]'>ココいくリスト</h1>
+          <h1 className='text-2xl font-bold text-gray-700'>ココいくリスト</h1>
         </header>
         <main className='flex-1 p-4'>
           <div className='flex items-center justify-center h-full'>

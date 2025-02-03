@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { LogOut, UserX } from 'lucide-react';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -16,7 +15,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-export const ProfileContainer = () => {
+export const SettingsContainer = () => {
   const { signOut, deleteAccount } = useAuth();
   const router = useRouter();
 
@@ -41,6 +40,7 @@ export const ProfileContainer = () => {
   return (
     <div className='max-w-md min-h-screen p-4 mx-auto bg-white'>
       <div className='space-y-6'>
+        <h1 className='text-2xl font-bold text-gray-900'>設定</h1>
         <hr className='my-4' />
 
         <button
