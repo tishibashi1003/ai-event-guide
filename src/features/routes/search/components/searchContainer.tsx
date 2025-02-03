@@ -26,7 +26,9 @@ export default function SearchContainer() {
   const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showDetail, setShowDetail] = useState(false);
-  const [activeTab, setActiveTab] = useState<'weekend' | 'custom'>('weekend');
+  const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(
+    'recommended'
+  );
   const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
   const [dateRange, setDateRange] = useState<{
     startDate: string;
@@ -67,7 +69,7 @@ export default function SearchContainer() {
     });
 
   const events =
-    activeTab === 'weekend'
+    activeTab === 'recommended'
       ? [
           ...recommendedEvents,
           ...weeklyEvents.filter(
@@ -145,29 +147,34 @@ export default function SearchContainer() {
         <div className='flex w-full max-w-xs bg-[#F0F0F0] rounded-full p-1'>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
-              activeTab === 'weekend'
+              activeTab === 'recommended'
                 ? 'bg-[#FFD700] text-yellow-800 rounded-full'
                 : 'text-[#808080] hover:bg-[#E0E0E0] rounded-full'
             }`}
-            onClick={() => setActiveTab('weekend')}
+            onClick={() => setActiveTab('recommended')}
           >
             今週のおすすめ
           </button>
           <button
             className={`flex-1 py-3 px-4 text-center text-sm font-medium transition-all duration-300 ${
-              activeTab === 'custom'
+              activeTab === 'all'
                 ? 'bg-[#FFD700] text-yellow-800 rounded-full'
                 : 'text-[#808080] hover:bg-[#E0E0E0] rounded-full'
             }`}
-            onClick={() => setActiveTab('custom')}
+            onClick={() => setActiveTab('all')}
           >
-            ぜんぶ
+            今後のイベント
           </button>
         </div>
-        {activeTab === 'weekend' && (
+        {activeTab === 'recommended' && (
           <p className='mt-3 text-xs text-gray-300 text-center'>
             <span className='text-yellow-300 font-medium'>Pick Up </span>=
             あなたの興味に合わせたおすすめ
+          </p>
+        )}
+        {activeTab === 'all' && (
+          <p className='mt-3 text-xs text-gray-300 text-center'>
+            今週のおすすめタブ以降に開催予定のイベント
           </p>
         )}
       </header>
@@ -178,7 +185,7 @@ export default function SearchContainer() {
             <SearchLoading />
           </div>
         ) : currentEvent ? (
-          activeTab === 'weekend' ? (
+          activeTab === 'recommended' ? (
             <div className='h-full px-4 pb-4 overflow-y-auto'>
               {events.map((event) => (
                 <VerticalCard
