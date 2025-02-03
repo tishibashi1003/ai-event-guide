@@ -4,9 +4,9 @@ import { Metadata } from 'next';
 import { Loading } from '@/components/ui/loading';
 
 interface Props {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export const metadata: Metadata = {
