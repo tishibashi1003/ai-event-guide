@@ -7,7 +7,7 @@ main:
             - secret_id: "OPENROUTER_API_KEY"
             - location_query: ""
             - current_location: ""
-            - summary_template: "以下の情報を踏まえて%sの%sで丸一日楽しめるプランに修正して。%sからスタートする行程で作成してください。\n\n授乳室情報:\n%s\n\n子連れランチ情報:\n%s\n\n経路情報:\n%s"
+            - event_title: ""
             - nursing_result: {}
             - restaurant_result: {}
             - route_result: {}
@@ -17,6 +17,7 @@ main:
             - location_query: ${input.location}
             - location_query: ${location_query + "　" + input.place}
             - current_location: ${input.current_location}
+            - event_title: ${input.event_title}
 
     - get_secret:
         call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
@@ -87,9 +88,9 @@ main:
     - prepare_summary_template:
         assign:
             - template_part1: "以下の情報を踏まえて"
-            - template_part2: "で\n丸一日楽しめるプランを建てる。なお与えられた情報のみで組み立て推測は含めない\n"
-            - template_part3: "からスタートする行程で作成してください。\n以下の形式を参考にマークダウンで出力すること\n"
-            - format_template: "テーマ：\n対象：\nプラン概要：\n具体的なスケジュール：\n〇〇：〇〇 XX出発\n- 説明など\n〇〇：〇〇 XX到着\n- 説明など\n"
+            - template_part2: ${"で開催される「" + event_title + "」に参加する際の\n丸一日楽しめるプランを建てる。なお与えられた情報のみで組み立て推測は含めない\n"}
+            - template_part3: "からスタートする行程で作成してください。\n必ずマークダウン形式で出力すること\n"
+            - format_template: "###テーマ\n###対象\n###プラン概要\n###具体的なスケジュール：\n〇〇:〇〇 XX出発\n- 説明など\n〇〇:〇〇 XX到着\n- 説明など\n"
 
     - prepare_summary:
         assign:

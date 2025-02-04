@@ -9,7 +9,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
-import { Star } from 'lucide-react';
+import { Star, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import {
   Timestamp,
@@ -29,6 +29,7 @@ import { generateUserProfileVector } from '@/features/routes/preferences/utils/v
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
 import { executeWorkflow } from '../serverActions/planning';
+import ReactMarkdown from 'react-markdown';
 
 interface Props {
   eventId: string;
@@ -39,6 +40,8 @@ export default function EventDetailContainer({ eventId }: Props) {
   const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
+  const [isPlanningLoading, setIsPlanningLoading] = useState(false);
+  const [planningResult, setPlanningResult] = useState<string | null>(null);
   const { data: event, isLoading } = useFirestoreDoc<Event>(
     `events/${eventId}`
   );
@@ -182,6 +185,33 @@ export default function EventDetailContainer({ eventId }: Props) {
     }
   };
 
+  const handlePlanningGeneration = async () => {
+    if (!event) return;
+
+    try {
+      setIsPlanningLoading(true);
+      const result = await executeWorkflow({
+        eventLocation: event.eventLocationCityJa,
+        eventPlace: event.eventLocationNameJa,
+        eventCity: event.eventLocationCityJa,
+        eventTitle: event.eventTitleJa,
+      });
+      if (result) {
+        setPlanningResult(result);
+      }
+    } catch (error) {
+      console.error('AIプランの生成に失敗しました:', error);
+      toast({
+        title: 'エラーが発生しました',
+        description:
+          'AIプランの生成に失敗しました。時間をおいて再度お試しください。',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsPlanningLoading(false);
+    }
+  };
+
   if (isLoading) {
     return <Loading />;
   }
@@ -194,7 +224,6 @@ export default function EventDetailContainer({ eventId }: Props) {
     <div className='flex flex-col min-h-screen bg-white'>
       <main className='flex-1 p-4'>
         <div className='max-w-2xl mx-auto'>
-          <button onClick={() => executeWorkflow()}>aaa</button>
           <h1 className='mb-4 text-2xl font-bold text-gray-900'>
             {event.eventEmoji} {event.eventTitleJa}
           </h1>
@@ -234,15 +263,53 @@ export default function EventDetailContainer({ eventId }: Props) {
 
             <div dangerouslySetInnerHTML={{ __html: event.renderedContent }} />
 
+            {/* メインアクション */}
             <div className='flex justify-center mt-6'>
               <button
                 onClick={handleGoingClick}
                 disabled={isProcessing || !user}
-                className='w-auto h-16 px-6 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
+                className='w-full sm:w-auto h-14 px-8 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
               >
                 <Star className='w-6 h-6 mr-2 fill-current' />
                 {isProcessing ? '処理中...' : 'ココいく！'}
               </button>
+            </div>
+
+            {/* AIプランセクション */}
+            <div className='mt-12 rounded-xl overflow-hidden border border-purple-100'>
+              <div className='px-6 py-4 bg-gradient-to-r from-purple-500/5 to-blue-500/5 border-b border-purple-100'>
+                <h2 className='text-base font-medium text-gray-900 flex items-center'>
+                  <Sparkles className='w-4 h-4 text-purple-500 mr-2' />
+                  AI があなたの週末をサポート
+                </h2>
+                <p className='mt-1 text-sm text-gray-500'>
+                  周辺施設や移動時間を考慮した、おすすめプランを AI が提案します
+                </p>
+              </div>
+
+              <div className='p-6 bg-white'>
+                {!planningResult ? (
+                  <div className='flex flex-col items-center justify-center text-center'>
+                    <button
+                      onClick={handlePlanningGeneration}
+                      disabled={isPlanningLoading || !user}
+                      className='w-full sm:w-auto h-10 px-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 rounded-full flex items-center justify-center text-gray-700 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 disabled:opacity-50 disabled:cursor-not-allowed'
+                    >
+                      <Sparkles className='w-4 h-4 mr-2 text-purple-500' />
+                      {isPlanningLoading
+                        ? 'プラン作成中...'
+                        : 'プランを作成する'}
+                    </button>
+                    <p className='mt-3 text-xs text-gray-500'>
+                      ※ プランの生成には20秒ほどかかります
+                    </p>
+                  </div>
+                ) : (
+                  <div className='prose prose-sm max-w-none text-gray-600 [&>h3]:text-base [&>h3]:font-medium [&>h3]:text-gray-900 [&>h3:not(:first-child)]:mt-6'>
+                    <ReactMarkdown>{planningResult}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* 類似イベント */}
