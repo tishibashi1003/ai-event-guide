@@ -20,7 +20,6 @@ import {
   getDocs,
   doc,
   setDoc,
-  where,
   vector,
 } from 'firebase/firestore';
 import { db } from '@/utils/firebase/config';
@@ -42,8 +41,14 @@ export default function EventDetailContainer({ eventId }: Props) {
   const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
   const [isPlanningLoading, setIsPlanningLoading] = useState(false);
   const [planningResult, setPlanningResult] = useState<string | null>(null);
-  const { data: event, isLoading } = useFirestoreDoc<Event>(
+  const { data: event, isLoading: isEventLoading } = useFirestoreDoc<Event>(
     `events/${eventId}`
+  );
+  const {
+    data: eventInteractionHistory,
+    isLoading: isEventInteractionHistoryLoading,
+  } = useFirestoreDoc<EventInteractionHistory>(
+    `users/${user?.uid}/eventInteractionHistories/${eventId}`
   );
 
   // 類似イベントの取得
@@ -88,19 +93,7 @@ export default function EventDetailContainer({ eventId }: Props) {
     async (action: EventInteractionHistory['action']) => {
       if (!user || !event) return;
 
-      // 既存のインタラクションを確認
-      const historiesRef = collection(
-        db,
-        `users/${user.uid}/eventInteractionHistories`
-      );
-      const existingQuery = query(
-        historiesRef,
-        where('eventId', '==', event.id),
-        orderBy('createdAt', 'desc'),
-        limit(1)
-      );
-      const existingSnapshot = await getDocs(existingQuery);
-      const existingInteraction = existingSnapshot.docs[0]?.data()?.action as
+      const existingInteraction = eventInteractionHistory?.action as
         | EventInteractionHistory['action']
         | undefined;
 
@@ -119,6 +112,7 @@ export default function EventDetailContainer({ eventId }: Props) {
         eventVector: event.eventVector,
         action,
         createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
       };
 
       await setDoc(
@@ -127,7 +121,7 @@ export default function EventDetailContainer({ eventId }: Props) {
       );
 
       const historiesQuery = query(
-        historiesRef,
+        collection(db, `users/${user.uid}/eventInteractionHistories`),
         orderBy('createdAt', 'desc'),
         limit(15)
       );
@@ -146,11 +140,16 @@ export default function EventDetailContainer({ eventId }: Props) {
 
       await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
     },
-    [user, event]
+    [user, event, eventInteractionHistory?.action]
   );
 
   useEffect(() => {
-    if (!isLoading && !event) {
+    if (
+      !isEventLoading &&
+      !event &&
+      !isEventInteractionHistoryLoading &&
+      !eventInteractionHistory
+    ) {
       console.error('イベントが見つかりません');
       router.push('/search');
       return;
@@ -165,7 +164,15 @@ export default function EventDetailContainer({ eventId }: Props) {
     };
 
     recordView();
-  }, [user, event, isLoading, router, updateUserVector]);
+  }, [
+    user,
+    event,
+    router,
+    updateUserVector,
+    isEventLoading,
+    isEventInteractionHistoryLoading,
+    eventInteractionHistory,
+  ]);
 
   const handleGoingClick = async () => {
     if (!user || !event || isProcessing) return;
@@ -190,7 +197,7 @@ export default function EventDetailContainer({ eventId }: Props) {
   };
 
   const handlePlanningGeneration = async () => {
-    if (!event) return;
+    if (!event || !user) return;
 
     try {
       setIsPlanningLoading(true);
@@ -202,6 +209,20 @@ export default function EventDetailContainer({ eventId }: Props) {
       });
       if (result) {
         setPlanningResult(result);
+        // AIプランを保存
+        const historiesRef = doc(
+          db,
+          `users/${user.uid}/eventInteractionHistories`,
+          event.id
+        );
+        const addData: Pick<
+          EventInteractionHistory,
+          'aiPlanning' | 'updatedAt'
+        > = {
+          aiPlanning: result,
+          updatedAt: Timestamp.now(),
+        };
+        await setDoc(historiesRef, addData, { merge: true });
       }
     } catch (error) {
       console.error('AIプランの生成に失敗しました:', error);
@@ -216,7 +237,7 @@ export default function EventDetailContainer({ eventId }: Props) {
     }
   };
 
-  if (isLoading) {
+  if (isEventLoading || isEventInteractionHistoryLoading) {
     return <Loading />;
   }
 
@@ -287,26 +308,35 @@ export default function EventDetailContainer({ eventId }: Props) {
                   AI があなたの週末をサポート
                 </h2>
                 <p className='mt-1 text-sm text-gray-500'>
-                  周辺施設や移動時間を考慮した、おすすめプランを AI が提案します
+                  {eventInteractionHistory?.aiPlanning
+                    ? 'AIが生成したおすすめプランです'
+                    : '周辺施設や移動時間を考慮した、おすすめプランを AI が提案します'}
                 </p>
               </div>
 
               <div className='p-6 bg-white'>
                 {!planningResult ? (
                   <div className='flex flex-col items-center justify-center text-center'>
-                    <button
-                      onClick={handlePlanningGeneration}
-                      disabled={isPlanningLoading || !user}
-                      className='w-full sm:w-auto h-10 px-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 rounded-full flex items-center justify-center text-gray-700 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 disabled:opacity-50 disabled:cursor-not-allowed'
-                    >
-                      <Sparkles className='w-4 h-4 mr-2 text-purple-500' />
-                      {isPlanningLoading
-                        ? 'プラン作成中...'
-                        : 'プランを作成する'}
-                    </button>
-                    <p className='mt-3 text-xs text-gray-500'>
-                      ※ プランの生成には20秒ほどかかります
-                    </p>
+                    {!eventInteractionHistory?.aiPlanning && (
+                      <>
+                        <button
+                          onClick={handlePlanningGeneration}
+                          disabled={isPlanningLoading}
+                          className='w-full sm:w-auto h-10 px-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 rounded-full flex items-center justify-center text-gray-700 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          <Sparkles className='w-4 h-4 mr-2 text-purple-500' />
+                          {isPlanningLoading
+                            ? 'プラン作成中...'
+                            : eventInteractionHistory?.aiPlanning
+                            ? 'プランは生成済みです'
+                            : 'プランを作成する'}
+                        </button>
+                        <p className='mt-3 text-xs text-gray-500'>
+                          ※ プランの生成には20秒ほどかかります <br /> ※
+                          プランの生成は1ベントにつき1度だけです
+                        </p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className='prose prose-sm max-w-none text-gray-600 [&>h3]:text-base [&>h3]:font-medium [&>h3]:text-gray-900 [&>h3:not(:first-child)]:mt-6'>

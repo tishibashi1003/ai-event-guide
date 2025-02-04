@@ -35,6 +35,8 @@ export const EventInteractionHistorySchema = z.object({
   action: z.enum(['like', 'dislike', 'kokoiku', 'view']),
   eventVector: z.array(z.number()),
   createdAt: z.instanceof(Timestamp),
+  updatedAt: z.instanceof(Timestamp),
+  aiPlanning: z.string().optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;
