@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Event,
   EventInteractionHistory,
@@ -84,66 +84,70 @@ export default function EventDetailContainer({ eventId }: Props) {
     fetchSimilarEvents();
   }, [similarEventsData]);
 
-  const updateUserVector = async (
-    action: EventInteractionHistory['action']
-  ) => {
-    if (!user || !event) return;
+  const updateUserVector = useCallback(
+    async (action: EventInteractionHistory['action']) => {
+      if (!user || !event) return;
 
-    // 既存のインタラクションを確認
-    const historiesRef = collection(
-      db,
-      `users/${user.uid}/eventInteractionHistories`
-    );
-    const existingQuery = query(
-      historiesRef,
-      where('eventId', '==', event.id),
-      orderBy('createdAt', 'desc'),
-      limit(1)
-    );
-    const existingSnapshot = await getDocs(existingQuery);
-    const existingInteraction = existingSnapshot.docs[0]?.data()?.action as
-      | EventInteractionHistory['action']
-      | undefined;
+      // 既存のインタラクションを確認
+      const historiesRef = collection(
+        db,
+        `users/${user.uid}/eventInteractionHistories`
+      );
+      const existingQuery = query(
+        historiesRef,
+        where('eventId', '==', event.id),
+        orderBy('createdAt', 'desc'),
+        limit(1)
+      );
+      const existingSnapshot = await getDocs(existingQuery);
+      const existingInteraction = existingSnapshot.docs[0]?.data()?.action as
+        | EventInteractionHistory['action']
+        | undefined;
 
-    if (action === 'view') {
-      if (existingInteraction === 'kokoiku' || existingInteraction === 'like') {
-        return; // 既に kokoiku の場合は何もしない
+      if (action === 'view') {
+        if (
+          existingInteraction === 'kokoiku' ||
+          existingInteraction === 'like'
+        ) {
+          return; // 既に kokoiku の場合は何もしない
+        }
       }
-    }
 
-    const newDoc: EventInteractionHistory = {
-      userId: user.uid,
-      eventId: event.id,
-      eventVector: event.eventVector,
-      action,
-      createdAt: Timestamp.now(),
-    };
+      const newDoc: EventInteractionHistory = {
+        userId: user.uid,
+        eventId: event.id,
+        eventVector: event.eventVector,
+        action,
+        createdAt: Timestamp.now(),
+      };
 
-    await setDoc(
-      doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
-      newDoc
-    );
+      await setDoc(
+        doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
+        newDoc
+      );
 
-    const historiesQuery = query(
-      historiesRef,
-      orderBy('createdAt', 'desc'),
-      limit(15)
-    );
-    const historiesSnapshot = await getDocs(historiesQuery);
-    const userVector = generateUserProfileVector(
-      historiesSnapshot.docs.map((doc) =>
-        doc.data()
-      ) as EventInteractionHistory[]
-    );
+      const historiesQuery = query(
+        historiesRef,
+        orderBy('createdAt', 'desc'),
+        limit(15)
+      );
+      const historiesSnapshot = await getDocs(historiesQuery);
+      const userVector = generateUserProfileVector(
+        historiesSnapshot.docs.map((doc) =>
+          doc.data()
+        ) as EventInteractionHistory[]
+      );
 
-    const newUserDoc: User = {
-      // @ts-expect-error  zod で vector を定義できない
-      preferenceVector: vector(userVector),
-      updatedAt: Timestamp.now(),
-    };
+      const newUserDoc: User = {
+        // @ts-expect-error  zod で vector を定義できない
+        preferenceVector: vector(userVector),
+        updatedAt: Timestamp.now(),
+      };
 
-    await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
-  };
+      await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
+    },
+    [user, event]
+  );
 
   useEffect(() => {
     if (!isLoading && !event) {
