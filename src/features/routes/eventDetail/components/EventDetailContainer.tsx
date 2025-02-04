@@ -161,7 +161,7 @@ export default function EventDetailContainer({ eventId }: Props) {
     };
 
     recordView();
-  }, [user, event, isLoading, router]);
+  }, [user, event, isLoading, router, updateUserVector]);
 
   const handleGoingClick = async () => {
     if (!user || !event || isProcessing) return;
