@@ -28,6 +28,7 @@ import { toast } from '@/hooks/toast/useToast';
 import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
+import { executeWorkflow } from '../serverActions/planning';
 
 interface Props {
   eventId: string;
@@ -193,6 +194,7 @@ export default function EventDetailContainer({ eventId }: Props) {
     <div className='flex flex-col min-h-screen bg-white'>
       <main className='flex-1 p-4'>
         <div className='max-w-2xl mx-auto'>
+          <button onClick={() => executeWorkflow()}>aaa</button>
           <h1 className='mb-4 text-2xl font-bold text-gray-900'>
             {event.eventEmoji} {event.eventTitleJa}
           </h1>

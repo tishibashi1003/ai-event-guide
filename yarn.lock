@@ -681,6 +681,13 @@
   dependencies:
     google-auth-library "^9.1.0"
 
+"@google-cloud/workflows@^3.4.0":
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/@google-cloud/workflows/-/workflows-3.4.0.tgz#6e2d9ed415b6eee96b332c9a7624517e8b178402"
+  integrity sha512-nqsKIP2agCP+htjRhuA7q2kMglsHeNtfjlziiWlaKoctM9zwMAkeBowMQGKgLFdkyW2ure/AyC0GYK9MGEUA9A==
+  dependencies:
+    google-gax "^4.0.3"
+
 "@google/generative-ai@^0.21.0":
   version "0.21.0"
   resolved "https://registry.yarnpkg.com/@google/generative-ai/-/generative-ai-0.21.0.tgz#a5011aab9e6082e706937b26ef23445933fa0d15"
