@@ -9,7 +9,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useFirestoreDoc } from '@/hooks/useFirestore';
 import { Loading } from '@/components/ui/loading';
-import { Star, Sparkles } from 'lucide-react';
+import { Star, Sparkles, Baby } from 'lucide-react';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import {
   Timestamp,
@@ -41,6 +41,9 @@ export default function EventDetailContainer({ eventId }: Props) {
   const [similarEvents, setSimilarEvents] = useState<Event[]>([]);
   const [isPlanningLoading, setIsPlanningLoading] = useState(false);
   const [planningResult, setPlanningResult] = useState<string | null>(null);
+  const [considerBaby, setConsiderBaby] = useState(false);
+  const [startLocation, setStartLocation] = useState('');
+  const [startLocationError, setStartLocationError] = useState(false);
   const { data: event, isLoading: isEventLoading } = useFirestoreDoc<Event>(
     `events/${eventId}`
   );
@@ -206,6 +209,8 @@ export default function EventDetailContainer({ eventId }: Props) {
         eventPlace: event.eventLocationNameJa,
         eventCity: event.eventLocationCityJa,
         eventTitle: event.eventTitleJa,
+        considerBaby,
+        startLocation: startLocation || event.eventLocationCityJa,
       });
       if (result) {
         setPlanningResult(result);
@@ -319,21 +324,128 @@ export default function EventDetailContainer({ eventId }: Props) {
                   <div className='flex flex-col items-center justify-center text-center'>
                     {!eventInteractionHistory?.aiPlanning && (
                       <>
+                        <div className='w-full max-w-sm space-y-4 mb-6'>
+                          <div className='flex items-center justify-between px-4 py-2 bg-gray-50 rounded-lg'>
+                            <div className='flex items-center space-x-2'>
+                              <Baby className='w-4 h-4 text-purple-500' />
+                              <span className='text-sm text-gray-700'>
+                                おむつ替えスポットを考慮
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => setConsiderBaby(!considerBaby)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                considerBaby ? 'bg-purple-500' : 'bg-gray-200'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  considerBaby
+                                    ? 'translate-x-6'
+                                    : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          <div className='space-y-2'>
+                            <label className='block text-sm text-gray-700 text-left'>
+                              出発地
+                              <span className='text-red-500 ml-1'>*</span>
+                            </label>
+                            <input
+                              type='text'
+                              value={startLocation}
+                              onChange={(e) => {
+                                setStartLocation(e.target.value);
+                                setStartLocationError(false);
+                              }}
+                              onBlur={() => {
+                                setStartLocationError(!startLocation.trim());
+                              }}
+                              placeholder='例：岐阜市'
+                              className={`w-full px-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 ${
+                                startLocationError
+                                  ? 'border-red-300 bg-red-50'
+                                  : 'border-gray-200'
+                              }`}
+                            />
+                            {startLocationError ? (
+                              <p className='text-xs text-red-500 text-left'>
+                                出発地を入力してください
+                              </p>
+                            ) : (
+                              <p className='text-xs text-gray-500 text-left'>
+                                市区町村単位で入力してください
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
                         <button
-                          onClick={handlePlanningGeneration}
-                          disabled={isPlanningLoading}
-                          className='w-full sm:w-auto h-10 px-6 bg-gradient-to-r from-purple-500/10 to-blue-500/10 hover:from-purple-500/20 hover:to-blue-500/20 rounded-full flex items-center justify-center text-gray-700 text-sm font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25 disabled:opacity-50 disabled:cursor-not-allowed'
+                          onClick={() => {
+                            if (!startLocation.trim()) {
+                              setStartLocationError(true);
+                              return;
+                            }
+                            handlePlanningGeneration();
+                          }}
+                          disabled={
+                            isPlanningLoading ||
+                            startLocationError ||
+                            !startLocation.trim()
+                          }
+                          className={`
+                            w-full sm:w-auto h-10 px-6
+                            bg-gradient-to-r from-purple-500/10 to-blue-500/10
+                            hover:from-purple-500/20 hover:to-blue-500/20
+                            rounded-full flex items-center justify-center
+                            text-gray-700 text-sm font-medium
+                            transition-all duration-300
+                            focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                            relative overflow-hidden
+                            ${isPlanningLoading ? 'animate-pulse' : ''}
+                          `}
                         >
-                          <Sparkles className='w-4 h-4 mr-2 text-purple-500' />
-                          {isPlanningLoading
-                            ? 'プラン作成中...'
-                            : eventInteractionHistory?.aiPlanning
-                            ? 'プランは生成済みです'
-                            : 'プランを作成する'}
+                          <Sparkles
+                            className={`w-4 h-4 mr-2 text-purple-500 transition-transform ${
+                              isPlanningLoading
+                                ? 'animate-[spin_3s_linear_infinite]'
+                                : ''
+                            }`}
+                          />
+                          <span
+                            className={`relative ${
+                              isPlanningLoading ? 'animate-pulse' : ''
+                            }`}
+                          >
+                            {isPlanningLoading ? (
+                              <>
+                                プラン作成中
+                                <span className='inline-block animate-[bounce_1.4s_infinite]'>
+                                  .
+                                </span>
+                                <span className='inline-block animate-[bounce_1.4s_0.2s_infinite]'>
+                                  .
+                                </span>
+                                <span className='inline-block animate-[bounce_1.4s_0.4s_infinite]'>
+                                  .
+                                </span>
+                              </>
+                            ) : eventInteractionHistory?.aiPlanning ? (
+                              'プランは生成済みです'
+                            ) : (
+                              'プランを作成する'
+                            )}
+                          </span>
+                          {isPlanningLoading && (
+                            <div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite] -skew-x-12' />
+                          )}
                         </button>
                         <p className='mt-3 text-xs text-gray-500'>
                           ※ プランの生成には20秒ほどかかります <br /> ※
-                          プランの生成は1ベントにつき1度だけです
+                          プランの生成は1イベントにつき1度だけです
                         </p>
                       </>
                     )}

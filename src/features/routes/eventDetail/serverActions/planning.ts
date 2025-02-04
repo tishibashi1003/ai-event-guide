@@ -14,6 +14,8 @@ interface WorkflowParams {
   eventPlace: string;
   eventCity: string;
   eventTitle: string;
+  considerBaby: boolean;
+  startLocation: string;
 }
 
 export async function executeWorkflow(params: WorkflowParams): Promise<string> {
@@ -27,8 +29,9 @@ export async function executeWorkflow(params: WorkflowParams): Promise<string> {
       argument: JSON.stringify({
         location: params.eventLocation,
         place: params.eventPlace,
-        current_location: params.eventCity,
+        current_location: params.startLocation,
         event_title: params.eventTitle,
+        consider_baby: params.considerBaby,
       }),
     },
   };
