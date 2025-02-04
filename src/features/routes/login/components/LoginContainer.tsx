@@ -38,7 +38,7 @@ export const LoginContainer = () => {
           await add<User>(userData, result.user.uid);
         }
 
-        router.push('/preferences');
+        router.push('/search');
       }
     } catch (error) {
       console.error('❌ Login error:', error);
