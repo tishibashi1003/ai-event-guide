@@ -19,6 +19,7 @@ export const EventSchema = z.object({
   eventDate: z.instanceof(Timestamp),
   createdAt: z.instanceof(Timestamp),
   updatedAt: z.instanceof(Timestamp),
+  renderedContent: z.string(),
 });
 
 export const UserSchema = z.object({

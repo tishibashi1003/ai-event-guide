@@ -71,6 +71,8 @@ exports.scheduledGetEventFunction = onSchedule({
         for (const event of parsedEventResult) {
           const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
           const docRef = db.collection("events").doc(docId);
+          // @ts-expect-error custom 以下は型定義がない
+          const renderedContent = prefectureEvents.custom.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? "";
 
           const eventVector = await genkitInstance.embed({
             embedder: textEmbedding004,
@@ -85,6 +87,7 @@ exports.scheduledGetEventFunction = onSchedule({
             eventVector: FieldValue.vector(eventVector),
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
+            renderedContent
           };
 
           await docRef.set(eventData);

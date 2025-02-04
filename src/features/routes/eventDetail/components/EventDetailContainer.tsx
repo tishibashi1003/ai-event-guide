@@ -230,6 +230,8 @@ export default function EventDetailContainer({ eventId }: Props) {
               </p>
             </div>
 
+            <div dangerouslySetInnerHTML={{ __html: event.renderedContent }} />
+
             <div className='flex justify-center mt-6'>
               <button
                 onClick={handleGoingClick}
