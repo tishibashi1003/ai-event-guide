@@ -8,6 +8,9 @@ main:
             - location_query: ""
             - current_location: ""
             - summary_template: "以下の情報を踏まえて%sの%sで丸一日楽しめるプランに修正して。%sからスタートする行程で作成してください。\n\n授乳室情報:\n%s\n\n子連れランチ情報:\n%s\n\n経路情報:\n%s"
+            - nursing_result: {}
+            - restaurant_result: {}
+            - route_result: {}
 
     - set_location:
         assign:
@@ -22,88 +25,109 @@ main:
             project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
         result: openrouter_key
 
-    - search_nursing:
-        call: http.post
-        args:
-            url: ${openrouter_endpoint}
-            headers:
-                Content-Type: "application/json"
-                Authorization: ${"Bearer " + openrouter_key}
-            body:
-                model: "openai/o1-mini:online"
-                plugins:
-                    - id: "web"
-                      max_results: 5
-                      search_prompt: ${location_query + "　授乳室"}
-                messages:
-                    - role: "user"
-                      content: ${location_query + "の授乳室や赤ちゃんの休憩スペースについて教えてください。具体的な場所や設備の情報を含めて説明してください。"}
-        result: nursing_result
+    - parallel_search:
+        parallel:
+            shared: [nursing_result, restaurant_result, route_result]
+            branches:
+                - nursing:
+                    steps:
+                        - search_nursing:
+                            call: http.post
+                            args:
+                                url: ${openrouter_endpoint}
+                                headers:
+                                    Content-Type: "application/json"
+                                    Authorization: ${"Bearer " + openrouter_key}
+                                body:
+                                    model: "openai/gpt-4o-mini:online"
+                                    plugins:
+                                        - id: "web"
+                                          max_results: 5
+                                    messages:
+                                        - role: "user"
+                                          content: ${input.place + "の授乳室の有無を教えて下さい"}
+                            result: nursing_result
+                - restaurant:
+                    steps:
+                        - search_restaurant:
+                            call: http.post
+                            args:
+                                url: ${openrouter_endpoint}
+                                headers:
+                                    Content-Type: "application/json"
+                                    Authorization: ${"Bearer " + openrouter_key}
+                                body:
+                                    model: "openai/gpt-4o-mini:online"
+                                    plugins:
+                                        - id: "web"
+                                          max_results: 5
+                                    messages:
+                                        - role: "user"
+                                          content: ${location_query + "で子連れで行きやすい飲食店を複数教えてください"}
+                            result: restaurant_result
+                - route:
+                    steps:
+                        - search_route:
+                            call: http.post
+                            args:
+                                url: ${openrouter_endpoint}
+                                headers:
+                                    Content-Type: "application/json"
+                                    Authorization: ${"Bearer " + openrouter_key}
+                                body:
+                                    model: "openai/gpt-4o-mini:online"
+                                    plugins:
+                                        - id: "web"
+                                          max_results: 1
+                                    messages:
+                                        - role: "user"
+                                          content: ${current_location + "から" + location_query + "の車での所要時間について教えてください。"}
+                            result: route_result
 
-    - search_restaurant:
-        call: http.post
-        args:
-            url: ${openrouter_endpoint}
-            headers:
-                Content-Type: "application/json"
-                Authorization: ${"Bearer " + openrouter_key}
-            body:
-                model: "openai/o1-mini:online"
-                plugins:
-                    - id: "web"
-                      max_results: 5
-                      search_prompt: ${location_query + "　子連れランチ"}
-                messages:
-                    - role: "user"
-                      content: ${location_query + "で子連れで行きやすいレストランを教えてください。キッズメニューや設備などの情報も含めて説明してください。"}
-        result: restaurant_result
-
-    - search_route:
-        call: http.post
-        args:
-            url: ${openrouter_endpoint}
-            headers:
-                Content-Type: "application/json"
-                Authorization: ${"Bearer " + openrouter_key}
-            body:
-                model: "openai/o1-mini:online"
-                plugins:
-                    - id: "web"
-                      max_results: 5
-                      search_prompt: ${"現在地" + current_location + "から" + location_query + "までの経路"}
-                messages:
-                    - role: "user"
-                      content: ${current_location + "から" + location_query + "の主要な観光スポットまでの移動方法、および" + location_query + "内の主要な観光スポット間の移動方法について教えてください。公共交通機関やタクシー、徒歩での所要時間なども含めて説明してください。"}
-        result: route_result
-
-    - get_weather:
-        call: http.get
-        args:
-            url: "https://weather.tsukumijima.net/api/forecast/city/130010"
-        result: weather_result
+    - prepare_summary_template:
+        assign:
+            - template_part1: "以下の情報を踏まえて"
+            - template_part2: "で\n丸一日楽しめるプランを建てる。なお与えられた情報のみで組み立て推測は含めない\n"
+            - template_part3: "からスタートする行程で作成してください。\n以下の形式を参考にマークダウンで出力すること\n"
+            - format_template: "テーマ：\n対象：\nプラン概要：\n具体的なスケジュール：\n〇〇：〇〇 XX出発\n- 説明など\n〇〇：〇〇 XX到着\n- 説明など\n"
 
     - prepare_summary:
         assign:
-            - header: ${"以下の情報を踏まえて" + input.location + "の" + input.place + "で丸一日楽しめるプランに修正して。" + current_location + "からスタートする行程で作成してください。"}
-            - weather_section: ${"天気情報:\n" + weather_result.body.forecasts[0].telop}
+            - header: ${template_part1 + input.location + "の" + input.place + template_part2 + current_location + template_part3 + format_template}
             - nursing_section: ${"授乳室情報:\n" + nursing_result.body.choices[0].message.content}
             - restaurant_section: ${"子連れランチ情報:\n" + restaurant_result.body.choices[0].message.content}
             - route_section: ${"経路情報:\n" + route_result.body.choices[0].message.content}
-            - prompt_content: ${header + "\n\n" + weather_section + "\n\n" + nursing_section + "\n\n" + restaurant_section + "\n\n" + route_section}
+            - prompt_content: ${header + "\n\n" + nursing_section + "\n\n" + restaurant_section + "\n\n" + route_section}
+            - project_id: "zenn-hackathon-b8dca"
+            - location: "asia-northeast1"
+            - model: "gemini-2.0-flash-exp"
+            - vertex_endpoint: ${"https://us-central1-aiplatform.googleapis.com/v1/projects/" + project_id + "/locations/" + location + "/publishers/google/models/" + model + ":generateContent"}
 
     - summarize:
         call: http.post
         args:
-            url: ${openrouter_endpoint}
-            headers:
-                Content-Type: "application/json"
-                Authorization: ${"Bearer " + openrouter_key}
+            url: ${vertex_endpoint}
+            auth:
+                type: OAuth2
             body:
-                model: "openai/o1-mini"
-                messages:
+                contents:
                     - role: "user"
-                      content: ${prompt_content}
+                      parts:
+                          - text: ${prompt_content}
+                generation_config:
+                    temperature: 0.7
+                    top_p: 0.95
+                    max_output_tokens: 8192
+                safety_settings:
+                    - category: "HARM_CATEGORY_HATE_SPEECH"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_HARASSMENT"
+                      threshold: "BLOCK_NONE"
         result: summary_result
 
     - returnResult:
-        return: ${summary_result.body.choices[0].message.content}
+        return: ${summary_result.body.candidates[0].content.parts[0].text}
