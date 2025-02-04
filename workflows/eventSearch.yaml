@@ -1,0 +1,109 @@
+main:
+    params: [input]
+    steps:
+    - init:
+        assign:
+            - openrouter_endpoint: "https://openrouter.ai/api/v1/chat/completions"
+            - secret_id: "OPENROUTER_API_KEY"
+            - location_query: ""
+            - current_location: ""
+            - summary_template: "以下の情報を踏まえて%sの%sで丸一日楽しめるプランに修正して。%sからスタートする行程で作成してください。\n\n授乳室情報:\n%s\n\n子連れランチ情報:\n%s\n\n経路情報:\n%s"
+
+    - set_location:
+        assign:
+            - location_query: ${input.location}
+            - location_query: ${location_query + "　" + input.place}
+            - current_location: ${input.current_location}
+
+    - get_secret:
+        call: googleapis.secretmanager.v1.projects.secrets.versions.accessString
+        args:
+            secret_id: ${secret_id}
+            project_id: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
+        result: openrouter_key
+
+    - search_nursing:
+        call: http.post
+        args:
+            url: ${openrouter_endpoint}
+            headers:
+                Content-Type: "application/json"
+                Authorization: ${"Bearer " + openrouter_key}
+            body:
+                model: "openai/o1-mini:online"
+                plugins:
+                    - id: "web"
+                      max_results: 5
+                      search_prompt: ${location_query + "　授乳室"}
+                messages:
+                    - role: "user"
+                      content: ${location_query + "の授乳室や赤ちゃんの休憩スペースについて教えてください。具体的な場所や設備の情報を含めて説明してください。"}
+        result: nursing_result
+
+    - search_restaurant:
+        call: http.post
+        args:
+            url: ${openrouter_endpoint}
+            headers:
+                Content-Type: "application/json"
+                Authorization: ${"Bearer " + openrouter_key}
+            body:
+                model: "openai/o1-mini:online"
+                plugins:
+                    - id: "web"
+                      max_results: 5
+                      search_prompt: ${location_query + "　子連れランチ"}
+                messages:
+                    - role: "user"
+                      content: ${location_query + "で子連れで行きやすいレストランを教えてください。キッズメニューや設備などの情報も含めて説明してください。"}
+        result: restaurant_result
+
+    - search_route:
+        call: http.post
+        args:
+            url: ${openrouter_endpoint}
+            headers:
+                Content-Type: "application/json"
+                Authorization: ${"Bearer " + openrouter_key}
+            body:
+                model: "openai/o1-mini:online"
+                plugins:
+                    - id: "web"
+                      max_results: 5
+                      search_prompt: ${"現在地" + current_location + "から" + location_query + "までの経路"}
+                messages:
+                    - role: "user"
+                      content: ${current_location + "から" + location_query + "の主要な観光スポットまでの移動方法、および" + location_query + "内の主要な観光スポット間の移動方法について教えてください。公共交通機関やタクシー、徒歩での所要時間なども含めて説明してください。"}
+        result: route_result
+
+    - get_weather:
+        call: http.get
+        args:
+            url: "https://weather.tsukumijima.net/api/forecast/city/130010"
+        result: weather_result
+
+    - prepare_summary:
+        assign:
+            - header: ${"以下の情報を踏まえて" + input.location + "の" + input.place + "で丸一日楽しめるプランに修正して。" + current_location + "からスタートする行程で作成してください。"}
+            - weather_section: ${"天気情報:\n" + weather_result.body.forecasts[0].telop}
+            - nursing_section: ${"授乳室情報:\n" + nursing_result.body.choices[0].message.content}
+            - restaurant_section: ${"子連れランチ情報:\n" + restaurant_result.body.choices[0].message.content}
+            - route_section: ${"経路情報:\n" + route_result.body.choices[0].message.content}
+            - prompt_content: ${header + "\n\n" + weather_section + "\n\n" + nursing_section + "\n\n" + restaurant_section + "\n\n" + route_section}
+
+    - summarize:
+        call: http.post
+        args:
+            url: ${openrouter_endpoint}
+            headers:
+                Content-Type: "application/json"
+                Authorization: ${"Bearer " + openrouter_key}
+            body:
+                model: "openai/o1-mini"
+                messages:
+                    - role: "user"
+                      content: ${prompt_content}
+        result: summary_result
+
+    - returnResult:
+        return: ${summary_result.body.choices[0].message.content}

@@ -1,0 +1,137 @@
+# This is a sample workflow to test or replace with your source code.
+#
+# This workflow passes the region where the workflow is deployed
+# to the Wikipedia API and returns a list of related Wikipedia articles.
+# A region is retrieved from the GOOGLE_CLOUD_LOCATION system variable
+# unless you input your own search term; for example, {"searchTerm": "asia"}.
+name: event-search
+main:
+    params: [input]
+    steps:
+    - init:
+        assign:
+            - project_id: "zenn-hackathon-b8dca"
+            - location: "asia-northeast1"
+            - model: "gemini-2.0-flash-exp"
+            - endpoint: ${"https://us-central1-aiplatform.googleapis.com/v1/projects/" + project_id + "/locations/" + location + "/publishers/google/models/" + model + ":generateContent"}
+            - location_query: ""
+            - current_location: ""
+
+    - set_location:
+        assign:
+            - location_query: ${input.location}
+            - location_query: ${location_query + "　" + input.place}
+            - current_location: ${input.current_location}
+
+    - search_nursing:
+        call: http.post
+        args:
+            url: ${endpoint}
+            auth:
+                type: OAuth2
+            body:
+                contents:
+                    - role: "user"
+                      parts:
+                          - text: ${location_query + "　授乳室"}
+                generation_config:
+                    temperature: 1.0
+                    top_p: 0.95
+                    max_output_tokens: 8192
+                tools:
+                    - google_search: {}
+                safety_settings:
+                    - category: "HARM_CATEGORY_HATE_SPEECH"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_HARASSMENT"
+                      threshold: "BLOCK_NONE"
+        result: nursing_result
+
+    - search_restaurant:
+        call: http.post
+        args:
+            url: ${endpoint}
+            auth:
+                type: OAuth2
+            body:
+                contents:
+                    - role: "user"
+                      parts:
+                          - text: ${location_query + "　子連れランチ"}
+                generation_config:
+                    temperature: 1.0
+                    top_p: 0.95
+                    max_output_tokens: 8192
+                tools:
+                    - google_search: {}
+                safety_settings:
+                    - category: "HARM_CATEGORY_HATE_SPEECH"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_HARASSMENT"
+                      threshold: "BLOCK_NONE"
+        result: restaurant_result
+
+    - search_route:
+        call: http.post
+        args:
+            url: ${endpoint}
+            auth:
+                type: OAuth2
+            body:
+                contents:
+                    - role: "user"
+                      parts:
+                          - text: ${"現在地" + current_location + "から" + location_query + "までの車での経路"}
+                generation_config:
+                    temperature: 1.0
+                    top_p: 0.95
+                    max_output_tokens: 8192
+                tools:
+                    - google_search: {}
+                safety_settings:
+                    - category: "HARM_CATEGORY_HATE_SPEECH"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_HARASSMENT"
+                      threshold: "BLOCK_NONE"
+        result: route_result
+
+    - summarize:
+        call: http.post
+        args:
+            url: ${endpoint}
+            auth:
+                type: OAuth2
+            body:
+                contents:
+                    - role: "user"
+                      parts:
+                          - text: ${"以下の情報を踏まえて丸一日楽しめるプランに修正して。\n\n授乳室情報:\n" + nursing_result.body.candidates[0].content.parts[0].text + "\n\n子連れランチ情報:\n" + restaurant_result.body.candidates[0].content.parts[0].text + "\n\n経路情報:\n" + route_result.body.candidates[0].content.parts[0].text}
+                generation_config:
+                    temperature: 0.7
+                    top_p: 0.95
+                    max_output_tokens: 8192
+                safety_settings:
+                    - category: "HARM_CATEGORY_HATE_SPEECH"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_DANGEROUS_CONTENT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_SEXUALLY_EXPLICIT"
+                      threshold: "BLOCK_NONE"
+                    - category: "HARM_CATEGORY_HARASSMENT"
+                      threshold: "BLOCK_NONE"
+        result: summary
+
+    - returnResult:
+        return: ${summary.body.candidates[0].content.parts[0].text}
