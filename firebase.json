@@ -20,23 +20,10 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**",
-      "functions/**",
-      "workflows/**",
-      "documents/**"
+      "**/node_modules/**"
     ],
     "frameworksBackend": {
       "region": "asia-east1"
-    },
-    "rewrites": [
-      {
-        "source": "**",
-        "function": {
-          "functionId": "ssrzennhackathonb8dca",
-          "region": "asia-east1",
-          "pinTag": true
-        }
-      }
-    ]
+    }
   }
 }

@@ -8,9 +8,7 @@ const nextConfig = {
 
   // キャッシュと最適化の設定
   experimental: {
-    serverActions: {
-      allowedOrigins: ['zenn-hackathon-b8dca.web.app'],
-    },
+    serverActions: true
   },
 
   // ビルドの設定
