@@ -42,6 +42,11 @@ export const EventInteractionHistorySchema = z.object({
     source: z.enum(['recommended', 'all']),
     isRecommended: z.boolean(),
   }).optional(),
+  npsData: z.object({
+    score: z.number().min(0).max(10),
+    feedback: z.string(),
+    createdAt: z.instanceof(Timestamp),
+  }).optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;

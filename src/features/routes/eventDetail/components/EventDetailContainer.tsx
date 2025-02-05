@@ -45,6 +45,9 @@ export default function EventDetailContainer({ eventId }: Props) {
   const [considerBaby, setConsiderBaby] = useState(false);
   const [startLocation, setStartLocation] = useState('');
   const [startLocationError, setStartLocationError] = useState(false);
+  const [npsScore, setNpsScore] = useState<number | null>(null);
+  const [npsFeedback, setNpsFeedback] = useState('');
+  const [hasSubmittedNps, setHasSubmittedNps] = useState(false);
 
   // Firestore インスタンスの取得
   const db = firebaseDb as Firestore;
@@ -198,6 +201,41 @@ export default function EventDetailContainer({ eventId }: Props) {
       });
     } finally {
       setIsPlanningLoading(false);
+    }
+  };
+
+  const handleNpsSubmit = async () => {
+    if (!user || !event || !db || npsScore === null) return;
+
+    try {
+      const historiesRef = doc(
+        db,
+        `users/${user.uid}/eventInteractionHistories`,
+        event.id
+      );
+
+      const addData: Pick<EventInteractionHistory, 'npsData' | 'updatedAt'> = {
+        npsData: {
+          score: npsScore,
+          feedback: npsFeedback,
+          createdAt: Timestamp.now(),
+        },
+        updatedAt: Timestamp.now(),
+      };
+
+      await setDoc(historiesRef, addData, { merge: true });
+      setHasSubmittedNps(true);
+      toast({
+        title: 'フィードバックを送信しました',
+        description: 'ご協力ありがとうございます',
+      });
+    } catch (error) {
+      console.error('NPSの保存に失敗しました:', error);
+      toast({
+        title: 'エラーが発生しました',
+        description: '時間をおいて再度お試しください',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -426,6 +464,88 @@ export default function EventDetailContainer({ eventId }: Props) {
                   </div>
                 )}
               </div>
+
+              {/* NPSセクション - プランが生成された後に表示 */}
+              {(planningResult || eventInteractionHistory?.aiPlanning) &&
+                !hasSubmittedNps &&
+                !eventInteractionHistory?.npsData && (
+                  <div className='p-6 border-t border-purple-100'>
+                    <h3 className='text-base font-medium text-gray-900 mb-4'>
+                      AIプランニングの評価をお願いします
+                    </h3>
+
+                    {/* NPS スコア選択 */}
+                    <div className='mb-6'>
+                      <p className='text-sm text-gray-600 mb-3'>
+                        このAIプランを友人や家族にお勧めしたいと思いますか？
+                      </p>
+                      <div className='flex justify-between gap-1'>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((score) => (
+                          <button
+                            key={score}
+                            onClick={() => setNpsScore(score)}
+                            className={`
+                            w-8 h-8 rounded-full text-sm font-medium
+                            ${
+                              npsScore === score
+                                ? 'bg-purple-500 text-white'
+                                : 'bg-purple-50 text-purple-900 hover:bg-purple-100'
+                            }
+                            transition-colors duration-200
+                          `}
+                          >
+                            {score}
+                          </button>
+                        ))}
+                      </div>
+                      <div className='flex justify-between mt-1'>
+                        <span className='text-xs text-gray-500'>
+                          全く思わない
+                        </span>
+                        <span className='text-xs text-gray-500'>
+                          とても思う
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* フィードバックテキスト */}
+                    <div className='mb-4'>
+                      <textarea
+                        value={npsFeedback}
+                        onChange={(e) => setNpsFeedback(e.target.value)}
+                        placeholder='AIプランについてのご意見やご感想をお聞かせください（任意）'
+                        className='w-full px-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-25'
+                        rows={3}
+                      />
+                    </div>
+
+                    {/* 送信ボタン */}
+                    <button
+                      onClick={handleNpsSubmit}
+                      disabled={npsScore === null}
+                      className={`
+                      w-full py-2 px-4 rounded-lg text-sm font-medium
+                      ${
+                        npsScore !== null
+                          ? 'bg-purple-500 text-white hover:bg-purple-600'
+                          : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      }
+                      transition-colors duration-200
+                    `}
+                    >
+                      評価を送信する
+                    </button>
+                  </div>
+                )}
+
+              {/* 送信済みメッセージ */}
+              {(hasSubmittedNps || eventInteractionHistory?.npsData) && (
+                <div className='p-6 border-t border-purple-100'>
+                  <p className='text-sm text-gray-600 text-center'>
+                    評価のご協力ありがとうございました 🙏
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* 類似イベント */}
