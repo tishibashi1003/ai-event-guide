@@ -101,17 +101,8 @@ export default function EventDetailContainer({ eventId }: Props) {
     async (action: EventInteractionHistory['action']) => {
       if (!user || !event || !db) return;
 
-      const existingInteraction = eventInteractionHistory?.action as
-        | EventInteractionHistory['action']
-        | undefined;
-
-      if (action === 'view') {
-        if (
-          existingInteraction === 'kokoiku' ||
-          existingInteraction === 'like'
-        ) {
-          return;
-        }
+      if (action === 'view' && eventInteractionHistory) {
+        return;
       }
 
       const newDoc: EventInteractionHistory = {
