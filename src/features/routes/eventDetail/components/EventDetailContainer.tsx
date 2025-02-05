@@ -105,7 +105,7 @@ export default function EventDetailContainer({ eventId }: Props) {
           existingInteraction === 'kokoiku' ||
           existingInteraction === 'like'
         ) {
-          return; // 既に kokoiku の場合は何もしない
+          return;
         }
       }
 
@@ -114,13 +114,14 @@ export default function EventDetailContainer({ eventId }: Props) {
         eventId: event.id,
         eventVector: event.eventVector,
         action,
-        createdAt: Timestamp.now(),
+        createdAt: eventInteractionHistory?.createdAt || Timestamp.now(),
         updatedAt: Timestamp.now(),
       };
 
       await setDoc(
         doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
-        newDoc
+        newDoc,
+        { merge: true }
       );
 
       const historiesQuery = query(
@@ -143,7 +144,12 @@ export default function EventDetailContainer({ eventId }: Props) {
 
       await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
     },
-    [user, event, eventInteractionHistory?.action]
+    [
+      user,
+      event,
+      eventInteractionHistory?.action,
+      eventInteractionHistory?.createdAt,
+    ]
   );
 
   useEffect(() => {
@@ -227,6 +233,7 @@ export default function EventDetailContainer({ eventId }: Props) {
           aiPlanning: result,
           updatedAt: Timestamp.now(),
         };
+        console.log('🚀  handlePlanningGeneration  addData:', addData);
         await setDoc(historiesRef, addData, { merge: true });
       }
     } catch (error) {
@@ -320,7 +327,8 @@ export default function EventDetailContainer({ eventId }: Props) {
               </div>
 
               <div className='p-6 bg-white'>
-                {!planningResult ? (
+                {planningResult == null &&
+                !eventInteractionHistory?.aiPlanning ? (
                   <div className='flex flex-col items-center justify-center text-center'>
                     {!eventInteractionHistory?.aiPlanning && (
                       <>
@@ -452,7 +460,9 @@ export default function EventDetailContainer({ eventId }: Props) {
                   </div>
                 ) : (
                   <div className='prose prose-sm max-w-none text-gray-600 [&>h3]:text-base [&>h3]:font-medium [&>h3]:text-gray-900 [&>h3:not(:first-child)]:mt-6'>
-                    <ReactMarkdown>{planningResult}</ReactMarkdown>
+                    <ReactMarkdown>
+                      {planningResult || eventInteractionHistory?.aiPlanning}
+                    </ReactMarkdown>
                   </div>
                 )}
               </div>
