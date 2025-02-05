@@ -16,7 +16,7 @@ exports.scheduledGetEventFunction = onSchedule({
   schedule: "0 0 * * *",
   region: "asia-northeast1",
   secrets: ['GOOGLE_GENAI_API_KEY'],
-  timeoutSeconds: 600,
+  timeoutSeconds: 1800,
 }, async (event) => {
   const db = getFirestore();
 
@@ -58,81 +58,83 @@ exports.scheduledGetEventFunction = onSchedule({
     const weekendDates = getWeekendDates();
 
     for (const targetDate of weekendDates) {
-      try {
-        const prefectureEvents = await eventSearchPrompt(genkitInstance, {
-          address: {
-            prefecture: "岐阜県",
-          },
-          targetDate: formatDate(targetDate),
-        });
-        const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
-
-        const savedTargetDateEventList = await db.collection("events")
-          .where("eventDate", "==", convertYYYYMMDDToTimestamp(targetDate.toISOString()))
-          .get();
-
-        console.log("savedTargetDateEventList", JSON.stringify(savedTargetDateEventList.docs.map(doc => doc.data()), null, 2));
-
-        // イベントを個別に保存
-        for (const event of parsedEventResult) {
-
-          console.log("event", JSON.stringify(event, null, 2));
-
-          const isDuplicateResult = await checkDuplicateEvent(genkitInstance, {
-            target: event,
-            eventList: savedTargetDateEventList.docs.map(doc => doc.data() as Event),
+      for (const genre of ["ショッピングモール", "住宅展示場", "スポーツ", "祭り", ""]) {
+        try {
+          const prefectureEvents = await eventSearchPrompt(genkitInstance, {
+            address: {
+              prefecture: "岐阜県",
+            },
+            targetDate: formatDate(targetDate),
+            genre,
           });
-          console.log("重複チェック結果:", isDuplicateResult.output);
+          const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
 
-          if (isDuplicateResult.output.isDuplicate) {
-            console.log(isDuplicateResult.output.message);
-            continue;
+          const savedTargetDateEventList = await db.collection("events")
+            .where("eventDate", "==", convertYYYYMMDDToTimestamp(targetDate.toISOString()))
+            .get();
+
+          console.log("savedTargetDateEventList", JSON.stringify(savedTargetDateEventList.docs.map(doc => doc.data()), null, 2));
+
+          // イベントを個別に保存
+          for (const event of parsedEventResult) {
+
+            console.log("event", JSON.stringify(event, null, 2));
+
+            const isDuplicateResult = await checkDuplicateEvent(genkitInstance, {
+              target: event,
+              eventList: savedTargetDateEventList.docs.map(doc => doc.data() as Event),
+            });
+            console.log("重複チェック結果:", isDuplicateResult.output);
+
+            if (isDuplicateResult.output.isDuplicate) {
+              continue;
+            }
+
+            const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+            const docRef = db.collection("events").doc(docId);
+            // @ts-expect-error custom 以下は型定義がない
+            const renderedContent = prefectureEvents.custom.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? "";
+
+            const eventVector = await genkitInstance.embed({
+              embedder: textEmbedding004,
+              content: `${event.eventCategoryEn} ${event.eventLocationCityEn}`,
+            });
+
+            const eventData: Event = {
+              id: docId,
+              ...event,
+              eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
+              // @ts-ignore vector が zod で定義されていないため
+              eventVector: FieldValue.vector(eventVector),
+              createdAt: Timestamp.now(),
+              updatedAt: Timestamp.now(),
+              renderedContent
+            };
+
+            await docRef.set(eventData);
+            await sleep(30000);
           }
 
-          const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
-          const docRef = db.collection("events").doc(docId);
-          // @ts-expect-error custom 以下は型定義がない
-          const renderedContent = prefectureEvents.custom.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? "";
-
-          const eventVector = await genkitInstance.embed({
-            embedder: textEmbedding004,
-            content: `${event.eventCategoryEn} ${event.eventLocationCityEn}`,
+          // 各日付の処理完了後にログを記録
+          await db.collection("scheduleLog").add({
+            executedAt: new Date(),
+            status: "success",
+            targetDate: Timestamp.fromDate(targetDate),
+            eventCount: parsedEventResult.length,
+            message: `Successfully fetched and updated ${parsedEventResult.length} events for ${formatDate(targetDate)}`,
           });
 
-          const eventData: Event = {
-            id: docId,
-            ...event,
-            eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
-            // @ts-ignore vector が zod で定義されていないため
-            eventVector: FieldValue.vector(eventVector),
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now(),
-            renderedContent
-          };
+        } catch (error) {
+          console.error(`Error processing date ${formatDate(targetDate)}:`, error);
 
-          await docRef.set(eventData);
-          await sleep(30000);
+          // エラーログを記録するが、処理は続行
+          await db.collection("scheduleLog").add({
+            executedAt: new Date(),
+            status: "error",
+            targetDate: Timestamp.fromDate(targetDate),
+            error: error instanceof Error ? error.message : "Unknown error",
+          });
         }
-
-        // 各日付の処理完了後にログを記録
-        await db.collection("scheduleLog").add({
-          executedAt: new Date(),
-          status: "success",
-          targetDate: Timestamp.fromDate(targetDate),
-          eventCount: parsedEventResult.length,
-          message: `Successfully fetched and updated ${parsedEventResult.length} events for ${formatDate(targetDate)}`,
-        });
-
-      } catch (error) {
-        console.error(`Error processing date ${formatDate(targetDate)}:`, error);
-
-        // エラーログを記録するが、処理は続行
-        await db.collection("scheduleLog").add({
-          executedAt: new Date(),
-          status: "error",
-          targetDate: Timestamp.fromDate(targetDate),
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
       }
     }
 

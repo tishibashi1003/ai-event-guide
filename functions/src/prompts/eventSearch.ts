@@ -7,6 +7,7 @@ export const eventSearchPrompt = async (
   input: {
     address: Address;
     targetDate: string;
+    genre: string;
   }
 ) => {
   return await genkit.definePrompt(
@@ -15,6 +16,7 @@ export const eventSearchPrompt = async (
       input: {
         schema: AddressSchema.extend({
           targetDate: z.string(),
+          genre: z.string(),
         }),
       },
       output: {
@@ -40,12 +42,13 @@ export const eventSearchPrompt = async (
     - eventDescriptionJa にはイベント情報の要約を4行程度で記載
 
     ## 検索条件
-    - {{prefecture}} {{targetDate}}
+    - {{prefecture}} {{targetDate}} {{genre}}
     `
   )(
     {
       ...input.address,
       targetDate: input.targetDate,
+      genre: input.genre,
     }
   );
 };
