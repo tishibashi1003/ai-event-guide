@@ -9,6 +9,12 @@ const nextConfig = {
       enabled: true,
     },
   },
+
+  // TypeScript チェッカーの設定
+  typescript: {
+    ignoreBuildErrors: false,
+    tsconfigPath: 'tsconfig.json',
+  },
 }
 
 module.exports = nextConfig
