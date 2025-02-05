@@ -15,15 +15,19 @@ export const db = initializeFirestore(app, {
   ignoreUndefinedProperties: true,
 });
 
-// App Checkの初期化
-// 開発環境の場合はデバッグトークンを有効化
-if (process.env.NODE_ENV === 'development') {
-  // @ts-expect-error FIREBASE_APPCHECK_DEBUG_TOKENはグローバルに定義されていない
-  self.FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_DEBUG_TOKEN;
-}
+// App Checkの初期化（クライアントサイドのみ）
+export const appCheck = typeof window !== 'undefined'
+  ? (() => {
+    // 開発環境の場合はデバッグトークンを有効化
+    if (process.env.NODE_ENV === 'development') {
+      // @ts-expect-error FIREBASE_APPCHECK_DEBUG_TOKENはグローバルに定義されていない
+      window.FIREBASE_APPCHECK_DEBUG_TOKEN = process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_DEBUG_TOKEN;
+    }
 
-// reCAPTCHA Enterpriseの初期化
-export const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY!),
-  isTokenAutoRefreshEnabled: true
-});
+    // reCAPTCHA Enterpriseの初期化
+    return initializeAppCheck(app, {
+      provider: new ReCaptchaEnterpriseProvider(process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY!),
+      isTokenAutoRefreshEnabled: true
+    });
+  })()
+  : null;
