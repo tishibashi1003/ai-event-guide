@@ -101,13 +101,14 @@ main:
             - template_part1: "以下の情報を踏まえて"
             - template_part2: ${"で開催される「" + event_title + "」に参加する際の\n丸一日楽しめるプランを建てる。なお与えられた情報のみで組み立て推測は含めない\n"}
             - template_part3: "からスタートする行程で作成してください。\n必ずマークダウン形式で出力すること\n"
-            - format_template: "###テーマ\n###対象\n###プラン概要\n###具体的なスケジュール：\n〇〇:〇〇 XX出発\n- 説明など\n〇〇:〇〇 XX到着\n- 説明など\n"
+            - format_template: "### テーマ\n\n### 対象\n\n### プラン概要\n\n### 具体的なスケジュール\n\n**〇〇:〇〇** XX出発\n- 説明など\n\n**〇〇:〇〇** XX到着\n- 説明など\n\n### 備考\n\n- 注意点1\n- 注意点2\n"
             - target_age: ${if(consider_baby, "\n\n※ 乳幼児連れのファミリー向けのプランを提案してください。", "\n\n※ 小学生連れのファミリー向けのプランを提案してください。")}
             - baby_note: ${if(consider_baby, "\n\n※ おむつ替えスポットの情報も含めて提案してください。", "")}
+            - markdown_note: "\n\n※ 時刻は太字（**）で表示し、説明は箇条書き（-）で記載してください。\n※ 各セクションの間に空行を入れてください。"
 
     - prepare_summary:
         assign:
-            - header: ${template_part1 + input.location + "の" + input.place + template_part2 + current_location + template_part3 + format_template + target_age + baby_note}
+            - header: ${template_part1 + input.location + "の" + input.place + template_part2 + current_location + template_part3 + format_template + target_age + baby_note + markdown_note}
             - nursing_section: ${if(consider_baby, if(len(nursing_result.body.choices[0].message.content) > 0, "授乳室情報:\n" + nursing_result.body.choices[0].message.content, ""), "")}
             - restaurant_section: ${"子連れランチ情報:\n" + restaurant_result.body.choices[0].message.content}
             - route_section: ${"経路情報:\n" + route_result.body.choices[0].message.content}
