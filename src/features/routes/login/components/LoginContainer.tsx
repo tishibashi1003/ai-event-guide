@@ -8,19 +8,30 @@ import Link from 'next/link';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useFirestoreCollectionUpdate } from '@/hooks/useFirestore';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, doc, getDoc } from 'firebase/firestore';
 import type { User } from '@/types/firestoreDocument';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/utils/firebase/config';
+import { getFirebase } from '@/utils/firebase/config';
+import { useEffect, useState } from 'react';
 
 export const LoginContainer = () => {
   const { signInWithGoogle } = useAuth();
   const router = useRouter();
   const { add } = useFirestoreCollectionUpdate('users');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithGoogle();
+      const { db } = getFirebase();
+
+      if (!db) {
+        console.error('Firestore is not initialized');
+        return;
+      }
 
       if (result?.user) {
         // ユーザードキュメントの存在確認
@@ -44,6 +55,20 @@ export const LoginContainer = () => {
       console.error('❌ Login error:', error);
     }
   };
+
+  // SSRの場合はローディング表示
+  if (!isClient) {
+    return (
+      <div className='flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-amber-50 to-white'>
+        <Card className='w-full max-w-md'>
+          <div className='flex items-center justify-center mt-6 mb-4'>
+            <LogoHorizontal />
+          </div>
+          <p className='text-sm text-center text-gray-600'>読み込み中...</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className='flex items-center justify-center min-h-screen px-4 bg-gradient-to-b from-amber-50 to-white'>

@@ -1,7 +1,10 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, DocumentReference, CollectionReference, DocumentData, query, where, orderBy, limit as firestoreLimit, Query, WhereFilterOp, OrderByDirection, documentId } from 'firebase/firestore';
 import useSWR, { mutate } from 'swr';
-import { db } from '@/utils/firebase/config';
+import { getFirebase } from '@/utils/firebase/config';
 import { FirestoreError } from 'firebase/firestore';
+
+// SSRチェック
+const isServer = () => typeof window === 'undefined';
 
 export type FirestoreDocResult<T> = {
   data: T | undefined;
@@ -48,6 +51,10 @@ export const docsFetcher = async <T>(
   ids: string[]
 ): Promise<T[]> => {
   if (!ids.length) return [];
+  if (isServer()) return [];
+
+  const { db } = getFirebase();
+  if (!db) return [];
 
   const collectionRef = collection(db, collectionPath);
   const q = query(collectionRef, where(documentId(), 'in', ids));
@@ -81,8 +88,12 @@ const collectionFetcher = async <T>(queryRef: CollectionReference<DocumentData> 
 // 単一ドキュメントを取得するためのフック
 export function useFirestoreDoc<T>(path: string | undefined) {
   const { data, error, isLoading } = useSWR(
-    path ? ['doc', path] : null,
-    path ? () => docFetcher<T>(doc(db, path)) : null,
+    path && !isServer() ? ['doc', path] : null,
+    path ? async () => {
+      const { db } = getFirebase();
+      if (!db) return undefined;
+      return docFetcher<T>(doc(db, path));
+    } : null,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -102,8 +113,11 @@ export function useFirestoreCollection<T>(
   options?: QueryOptions
 ) {
   const { data, error, isLoading } = useSWR(
-    path ? ['collection', path, options] : null,
-    path ? () => {
+    path && !isServer() ? ['collection', path, options] : null,
+    path ? async () => {
+      const { db } = getFirebase();
+      if (!db) return [];
+
       const collectionRef = collection(db, path) as CollectionReference<DocumentData>;
       let queryRef: Query<DocumentData> = collectionRef;
 
@@ -149,6 +163,23 @@ export function useFirestoreCollection<T>(
 
 // Firestoreドキュメントの更新用フック
 export function useFirestoreUpdate(path: string) {
+  if (isServer()) {
+    return {
+      update: async () => { },
+      set: async () => { },
+      remove: async () => { },
+    };
+  }
+
+  const { db } = getFirebase();
+  if (!db) {
+    return {
+      update: async () => { },
+      set: async () => { },
+      remove: async () => { },
+    };
+  }
+
   const docRef = doc(db, path);
 
   return {
@@ -187,6 +218,21 @@ export function useFirestoreUpdate(path: string) {
 
 // Firestoreコレクションの更新用フック
 export function useFirestoreCollectionUpdate(path: string) {
+  if (isServer()) {
+    return {
+      add: async () => '',
+      refresh: async () => { },
+    };
+  }
+
+  const { db } = getFirebase();
+  if (!db) {
+    return {
+      add: async () => '',
+      refresh: async () => { },
+    };
+  }
+
   const collectionRef = collection(db, path);
 
   return {

@@ -14,7 +14,7 @@ import { generateUserProfileVector } from '../utils/vector';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useRouter } from 'next/navigation';
 import { doc, setDoc, Timestamp, vector } from 'firebase/firestore';
-import { db } from '@/utils/firebase/config';
+import { getFirebase } from '@/utils/firebase/config';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -23,6 +23,9 @@ export function PreferencesContainer() {
   >([]);
   const { user } = useAuth();
   const router = useRouter();
+
+  // Firestore インスタンスの取得
+  const { db } = getFirebase();
 
   const {
     data: events,
@@ -89,7 +92,7 @@ export function PreferencesContainer() {
     } catch (error) {
       console.error('Error saving user preferences:', error);
     }
-  }, [user, interactionHistory, setUserData, router, getInteractionPath]);
+  }, [user, db, interactionHistory, setUserData, router, getInteractionPath]);
 
   useEffect(() => {
     if (events && currentIndex >= (events?.length ?? 0)) {
