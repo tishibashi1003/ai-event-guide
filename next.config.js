@@ -11,7 +11,6 @@ const nextConfig = {
     serverActions: {
       allowedOrigins: ['zenn-hackathon-b8dca.web.app'],
     },
-    serverExternalPackages: [],
   },
 
   // ビルドの設定
