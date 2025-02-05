@@ -15,7 +15,7 @@ initializeApp();
 exports.scheduledGetEventFunction = onSchedule({
   schedule: "0 0 * * *",
   region: "asia-northeast1",
-  secrets: ['GOOGLE_GENAI_API_KEY'],
+  secrets: ['GOOGLE_GENAI_API_KEY', 'OPENROUTER_API_KEY'],
   timeoutSeconds: 1800,
 }, async (event) => {
   const db = getFirestore();
@@ -80,17 +80,23 @@ exports.scheduledGetEventFunction = onSchedule({
 
             console.log("event", JSON.stringify(event, null, 2));
 
-            const isDuplicateResult = await checkDuplicateEvent(genkitInstance, {
+            const isDuplicateResult = await checkDuplicateEvent({
               target: event,
               eventList: savedTargetDateEventList.docs.map(doc => doc.data() as Event),
             });
-            console.log("重複チェック結果:", isDuplicateResult.output);
+            console.log("重複チェック結果:", isDuplicateResult);
 
-            if (isDuplicateResult.output.isDuplicate) {
+            // @ts-expect-error 型定義がない
+            if (isDuplicateResult.isDuplicate) {
+              // @ts-expect-error 型定義がない
+              console.log(isDuplicateResult.message);
               continue;
             }
 
-            const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+            // eventDateYYYYMMDDのフォーマットを統一（YYYY-MM-DDからYYYYMMDDに変換）
+            const normalizedEventDateYYYYMMDD = event.eventDateYYYYMMDD.replace(/-/g, '');
+
+            const docId = `${normalizedEventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
             const docRef = db.collection("events").doc(docId);
             // @ts-expect-error custom 以下は型定義がない
             const renderedContent = prefectureEvents.custom.candidates[0].groundingMetadata.searchEntryPoint.renderedContent ?? "";
@@ -103,7 +109,8 @@ exports.scheduledGetEventFunction = onSchedule({
             const eventData: Event = {
               id: docId,
               ...event,
-              eventDate: convertYYYYMMDDToTimestamp(event.eventDateYYYYMMDD),
+              eventDateYYYYMMDD: normalizedEventDateYYYYMMDD, // 正規化された日付を使用
+              eventDate: convertYYYYMMDDToTimestamp(normalizedEventDateYYYYMMDD),
               // @ts-ignore vector が zod で定義されていないため
               eventVector: FieldValue.vector(eventVector),
               createdAt: Timestamp.now(),

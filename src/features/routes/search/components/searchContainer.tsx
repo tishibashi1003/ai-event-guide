@@ -35,7 +35,7 @@ export default function SearchContainer() {
     // 日付範囲の設定（今日から7日後まで）
     const today = new Date();
     const nextWeek = new Date(today);
-    nextWeek.setDate(today.getDate() + 14);
+    nextWeek.setDate(today.getDate() + 7);
 
     setDateRange({
       startDate: today.toISOString().split('T')[0],
