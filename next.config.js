@@ -16,6 +16,9 @@ const nextConfig = {
   // ビルドの設定
   swcMinify: true,
   reactStrictMode: true,
+
+  // 404ページの設定
+  output: 'standalone',
 }
 
 module.exports = nextConfig
