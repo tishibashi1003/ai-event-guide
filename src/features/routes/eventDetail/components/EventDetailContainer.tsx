@@ -301,11 +301,19 @@ export default function EventDetailContainer({ eventId }: Props) {
             <div className='flex justify-center mt-6'>
               <button
                 onClick={handleGoingClick}
-                disabled={isProcessing || !user}
+                disabled={
+                  isProcessing ||
+                  !user ||
+                  eventInteractionHistory?.action === 'kokoiku'
+                }
                 className='w-full sm:w-auto h-14 px-8 bg-gradient-to-r from-[#FFD700] to-[#FFA500] rounded-full flex items-center justify-center text-white text-lg font-semibold shadow-lg transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-[#FFD700] focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
               >
                 <Star className='w-6 h-6 mr-2 fill-current' />
-                {isProcessing ? '処理中...' : 'ココいく！'}
+                {isProcessing
+                  ? '処理中...'
+                  : eventInteractionHistory?.action === 'kokoiku'
+                  ? 'ココいく済み'
+                  : 'ココいく！'}
               </button>
             </div>
 
