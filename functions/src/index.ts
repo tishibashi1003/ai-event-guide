@@ -1,5 +1,5 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { onCall } from "firebase-functions/v2/https";
+import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
 import { initializeApp } from "firebase-admin/app";
 import { getGenkitInstance } from "./utils/genkit";
@@ -138,6 +138,9 @@ exports.scheduledGetEventFunction = onSchedule({
 
 exports.findSimilarEvents = onCall({
   region: "asia-northeast1",
+  enforceAppCheck: true,
+  maxInstances: 2,
+  minInstances: 1,
 }, async (request) => {
   const db = getFirestore();
 
@@ -145,9 +148,25 @@ exports.findSimilarEvents = onCall({
     const {
       userId,
       limit = 10,
-      startDate, // ISO文字列形式（例：2024-02-15）
-      endDate    // ISO文字列形式（例：2024-03-15）
+      startDate,
+      endDate
     } = request.data;
+
+    // App Checkのトークン検証
+    if (!request.auth) {
+      throw new HttpsError(
+        'unauthenticated',
+        '認証されていないリクエストです。'
+      );
+    }
+
+    // ユーザーIDの一致を確認
+    if (request.auth.uid !== userId) {
+      throw new HttpsError(
+        'permission-denied',
+        '不正なユーザーIDです。'
+      );
+    }
 
     // ユーザードキュメントを取得
     const userDoc = await db.collection("users").doc(userId).get();

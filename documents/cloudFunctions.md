@@ -53,7 +53,8 @@ yarn build:watch
 ### 特定の関数のデプロイ
 
 ```bash
-firebase deploy --only functions:xxxx
+firebase deploy --only functions:scheduledGetEventFunction
+firebase deploy --only functions:findSimilarEvents
 ```
 
 ### 全関数のデプロイ
