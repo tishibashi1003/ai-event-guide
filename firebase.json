@@ -20,7 +20,10 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**",
+      "workflows/**",
+      "documents/**"
     ],
     "frameworksBackend": {
       "region": "asia-east1"
