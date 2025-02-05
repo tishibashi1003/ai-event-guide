@@ -8,6 +8,7 @@ import { eventSearchPrompt } from "./prompts/eventSearch";
 import { convertYYYYMMDDToTimestamp } from "./utils/date";
 import { Event } from "./types/firestoreDocument";
 import { OutputEventSchema } from "./types/prompt";
+import { checkDuplicateEvent } from "./prompts/checkDeplicate";
 
 initializeApp();
 
@@ -55,7 +56,6 @@ exports.scheduledGetEventFunction = onSchedule({
 
     // 各土日に対してイベントを取得
     const weekendDates = getWeekendDates();
-    console.log(`Processing events for ${weekendDates.length} weekend dates`);
 
     for (const targetDate of weekendDates) {
       try {
@@ -67,8 +67,28 @@ exports.scheduledGetEventFunction = onSchedule({
         });
         const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
 
+        const savedTargetDateEventList = await db.collection("events")
+          .where("eventDate", "==", convertYYYYMMDDToTimestamp(targetDate.toISOString()))
+          .get();
+
+        console.log("savedTargetDateEventList", JSON.stringify(savedTargetDateEventList.docs.map(doc => doc.data()), null, 2));
+
         // イベントを個別に保存
         for (const event of parsedEventResult) {
+
+          console.log("event", JSON.stringify(event, null, 2));
+
+          const isDuplicateResult = await checkDuplicateEvent(genkitInstance, {
+            target: event,
+            eventList: savedTargetDateEventList.docs.map(doc => doc.data() as Event),
+          });
+          console.log("重複チェック結果:", isDuplicateResult.output);
+
+          if (isDuplicateResult.output.isDuplicate) {
+            console.log(isDuplicateResult.output.message);
+            continue;
+          }
+
           const docId = `${event.eventDateYYYYMMDD}-${event.eventLocationNameEn.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
           const docRef = db.collection("events").doc(docId);
           // @ts-expect-error custom 以下は型定義がない
@@ -91,10 +111,6 @@ exports.scheduledGetEventFunction = onSchedule({
           };
 
           await docRef.set(eventData);
-          console.log(`Saved event: ${docId} for date: ${formatDate(targetDate)}`);
-
-          // 30秒待機
-          console.log(`Waiting 30 seconds before processing next event...`);
           await sleep(30000);
         }
 

@@ -36,7 +36,8 @@ export const eventSearchPrompt = async (
       - 例)
         - Art
     - eventLocation はイベントの施設名称
-    - eventLocationCity は市区町村名
+    - eventLocationCity はイベントの開催地住所
+    - eventDescriptionJa にはイベント情報の要約を4行程度で記載
 
     ## 検索条件
     - {{prefecture}} {{targetDate}}
