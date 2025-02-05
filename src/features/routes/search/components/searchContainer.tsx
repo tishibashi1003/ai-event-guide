@@ -4,12 +4,25 @@ import React, { useState, useEffect } from 'react';
 import SearchLoading from './searchLoading';
 import VerticalCard from './VerticalCard';
 import { Event } from '@/types/firestoreDocument';
-import { Timestamp } from 'firebase/firestore';
+import { getDoc, Timestamp } from 'firebase/firestore';
 import { useAuth } from '@/features/common/auth/AuthContext';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
 import { useFirestoreCollection } from '@/hooks/useFirestore';
 import { docsFetcher, sortDocsByIds } from '@/hooks/useFirestore';
 import { useRouter } from 'next/navigation';
+import {
+  doc,
+  setDoc,
+  vector,
+  collection,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+} from 'firebase/firestore';
+import { db } from '@/utils/firebase/config';
+import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
+import { EventInteractionHistory, User } from '@/types/firestoreDocument';
 
 export default function SearchContainer() {
   const { user } = useAuth();
@@ -30,6 +43,7 @@ export default function SearchContainer() {
     startTimestamp: Timestamp.now(),
     endTimestamp: Timestamp.now(),
   });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     // 日付範囲の設定（今日から7日後まで）
@@ -195,6 +209,78 @@ export default function SearchContainer() {
     isLoadingWeekly ||
     isLoadingFuture;
 
+  const handleEventClick = async (event: Event) => {
+    if (!user || !event || isProcessing || !db) return;
+
+    try {
+      setIsProcessing(true);
+
+      const eventHistoryRef = doc(
+        db,
+        `users/${user.uid}/eventInteractionHistories`,
+        event.id
+      );
+
+      const eventHistoryDoc = await getDoc(eventHistoryRef);
+      const eventHistory = eventHistoryDoc.data() as EventInteractionHistory;
+
+      // イベントクリックの記録
+      const newDoc: EventInteractionHistory = {
+        userId: user.uid,
+        eventId: event.id,
+        eventVector: event.eventVector,
+        action:
+          eventHistory?.action === 'kokoiku' ? eventHistory?.action : 'view',
+        createdAt: eventHistory?.createdAt || Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        clickContext: {
+          source: activeTab,
+          isRecommended:
+            activeTab === 'recommended'
+              ? recommendedEvents.some((recEvent) => recEvent.id === event.id)
+              : allRecommendedEvents.some(
+                  (recEvent) => recEvent.id === event.id
+                ),
+        },
+      };
+
+      await setDoc(eventHistoryRef, newDoc, { merge: true });
+
+      // ユーザーの好みベクトルを更新
+      const historiesRef = collection(
+        db,
+        `users/${user.uid}/eventInteractionHistories`
+      );
+      const historiesQuery = query(
+        historiesRef,
+        orderBy('createdAt', 'desc'),
+        limit(15)
+      );
+      const historiesSnapshot = await getDocs(historiesQuery);
+      const userVector = generateUserProfileVector(
+        historiesSnapshot.docs.map((doc) =>
+          doc.data()
+        ) as EventInteractionHistory[]
+      );
+
+      const userRef = doc(db, `users/${user.uid}`);
+      const newUserDoc: User = {
+        // @ts-expect-error vector が zod で定義されていないため
+        preferenceVector: vector(userVector),
+        updatedAt: Timestamp.now(),
+      };
+
+      await setDoc(userRef, newUserDoc, { merge: true });
+
+      // イベント詳細ページへ遷移
+      router.push(`/event/${event.id}`);
+    } catch (error) {
+      console.error('イベントクリックの記録中にエラーが発生しました:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   return (
     <div className='flex flex-col h-screen max-w-sm mx-auto'>
       <header className='flex flex-col items-center justify-between flex-shrink-0 p-4'>
@@ -244,7 +330,7 @@ export default function SearchContainer() {
               <VerticalCard
                 key={event.id}
                 event={event}
-                onClick={() => router.push(`/event/${event.id}`)}
+                onClick={() => handleEventClick(event)}
                 isRecommended={
                   activeTab === 'recommended'
                     ? recommendedEvents.some(

@@ -37,6 +37,11 @@ export const EventInteractionHistorySchema = z.object({
   createdAt: z.instanceof(Timestamp),
   updatedAt: z.instanceof(Timestamp),
   aiPlanning: z.string().optional(),
+  aiPlanningCreatedAt: z.instanceof(Timestamp).optional(),
+  clickContext: z.object({
+    source: z.enum(['recommended', 'all']),
+    isRecommended: z.boolean(),
+  }).optional(),
 });
 
 export type User = z.infer<typeof UserSchema>;

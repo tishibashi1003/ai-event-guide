@@ -98,88 +98,47 @@ export default function EventDetailContainer({ eventId }: Props) {
     fetchSimilarEvents();
   }, [similarEventsData]);
 
-  const updateUserVector = useCallback(
-    async (action: EventInteractionHistory['action']) => {
-      if (!user || !event || !db) return;
+  const updateUserVectorClickKokoiku = useCallback(async () => {
+    if (!user || !event || !db) return;
 
-      if (action === 'view' && eventInteractionHistory) {
-        return;
-      }
+    const newDoc: Pick<EventInteractionHistory, 'action' | 'updatedAt'> = {
+      action: 'kokoiku',
+      updatedAt: Timestamp.now(),
+    };
 
-      const newDoc: EventInteractionHistory = {
-        userId: user.uid,
-        eventId: event.id,
-        eventVector: event.eventVector,
-        action,
-        createdAt: eventInteractionHistory?.createdAt || Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      };
+    await setDoc(
+      doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
+      newDoc,
+      { merge: true }
+    );
 
-      await setDoc(
-        doc(db, `users/${user.uid}/eventInteractionHistories`, event.id),
-        newDoc,
-        { merge: true }
-      );
+    const historiesQuery = query(
+      collection(db, `users/${user.uid}/eventInteractionHistories`),
+      orderBy('createdAt', 'desc'),
+      limit(15)
+    );
+    const historiesSnapshot = await getDocs(historiesQuery);
+    const userVector = generateUserProfileVector(
+      historiesSnapshot.docs.map((doc) =>
+        doc.data()
+      ) as EventInteractionHistory[]
+    );
 
-      const historiesQuery = query(
-        collection(db, `users/${user.uid}/eventInteractionHistories`),
-        orderBy('createdAt', 'desc'),
-        limit(15)
-      );
-      const historiesSnapshot = await getDocs(historiesQuery);
-      const userVector = generateUserProfileVector(
-        historiesSnapshot.docs.map((doc) =>
-          doc.data()
-        ) as EventInteractionHistory[]
-      );
+    const newUserDoc: User = {
+      // @ts-expect-error  zod で vector を定義できない
+      preferenceVector: vector(userVector),
+      updatedAt: Timestamp.now(),
+    };
 
-      const newUserDoc: User = {
-        // @ts-expect-error  zod で vector を定義できない
-        preferenceVector: vector(userVector),
-        updatedAt: Timestamp.now(),
-      };
-
-      await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
-    },
-    [user, event, db, eventInteractionHistory]
-  );
-
-  useEffect(() => {
-    if (
-      !isEventLoading &&
-      !event &&
-      !isEventInteractionHistoryLoading &&
-      !eventInteractionHistory
-    ) {
-      console.error('イベントが見つかりません');
-      router.push('/search');
-      return;
-    }
-
-    if (!eventInteractionHistory && !isEventInteractionHistoryLoading) {
-      try {
-        updateUserVector('view');
-      } catch (error) {
-        console.error('閲覧履歴の記録中にエラーが発生しました:', error);
-      }
-      return;
-    }
-  }, [
-    user,
-    event,
-    router,
-    updateUserVector,
-    isEventLoading,
-    isEventInteractionHistoryLoading,
-    eventInteractionHistory,
-  ]);
+    await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
+  }, [user, event, db]);
 
   const handleGoingClick = async () => {
     if (!user || !event || isProcessing || !db) return;
 
     try {
       setIsProcessing(true);
-      await updateUserVector('kokoiku');
+      await updateUserVectorClickKokoiku();
       // 状態を即座に更新
       await mutateEventInteractionHistory();
       toast({
