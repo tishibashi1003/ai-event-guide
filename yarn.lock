@@ -164,7 +164,7 @@
   resolved "https://registry.yarnpkg.com/@firebase/app-check-types/-/app-check-types-0.5.3.tgz#38ba954acf4bffe451581a32fffa20337f11d8e5"
   integrity sha512-hyl5rKSj0QmwPdsAxrI5x1otDlByQ7bvNvVt8G/XPO2CSwE++rmSVf3VEhaeOR4J8ZFaF0Z0NDSmLejPweZ3ng==
 
-"@firebase/app-check@0.8.11":
+"@firebase/app-check@0.8.11", "@firebase/app-check@^0.8.11":
   version "0.8.11"
   resolved "https://registry.yarnpkg.com/@firebase/app-check/-/app-check-0.8.11.tgz#3c67148046fea0a0a9a1eecf1a17fdc31a76eda7"
   integrity sha512-42zIfRI08/7bQqczAy7sY2JqZYEv3a1eNa4fLFdtJ54vNevbBIRSEA3fZgRqWFNHalh5ohsBXdrYgFqaRIuCcQ==

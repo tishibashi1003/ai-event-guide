@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@firebase/app-check": "^0.8.11",
     "@genkit-ai/googleai": "^0.9.12",
     "@genkit-ai/vertexai": "^0.9.12",
     "@google-cloud/workflows": "^3.4.0",
