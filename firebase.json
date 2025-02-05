@@ -27,6 +27,16 @@
     ],
     "frameworksBackend": {
       "region": "asia-east1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "**",
+        "function": {
+          "functionId": "ssrzennhackathonb8dca",
+          "region": "asia-east1",
+          "pinTag": true
+        }
+      }
+    ]
   }
 }

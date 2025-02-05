@@ -8,13 +8,13 @@ const nextConfig = {
 
   // キャッシュと最適化の設定
   experimental: {
-    // Next.js 14の推奨設定
-    serverActions: true,
-    serverComponentsExternalPackages: [],
+    serverActions: {
+      allowedOrigins: ['zenn-hackathon-b8dca.web.app'],
+    },
+    serverExternalPackages: [],
   },
 
   // ビルドの設定
-  swcMinify: true,
   reactStrictMode: true,
 
   // 404ページの設定
