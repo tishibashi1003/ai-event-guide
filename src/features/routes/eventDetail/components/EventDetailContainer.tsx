@@ -21,8 +21,9 @@ import {
   doc,
   setDoc,
   vector,
+  Firestore,
 } from 'firebase/firestore';
-import { db } from '@/utils/firebase/config';
+import { db as firebaseDb } from '@/utils/firebase/config';
 import { toast } from '@/hooks/toast/useToast';
 import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
 import { useFindSimilarEvents } from '@/hooks/useFirebaseFunction';
@@ -44,6 +45,10 @@ export default function EventDetailContainer({ eventId }: Props) {
   const [considerBaby, setConsiderBaby] = useState(false);
   const [startLocation, setStartLocation] = useState('');
   const [startLocationError, setStartLocationError] = useState(false);
+
+  // Firestore インスタンスの取得
+  const db = firebaseDb as Firestore;
+
   const { data: event, isLoading: isEventLoading } = useFirestoreDoc<Event>(
     `events/${eventId}`
   );
@@ -94,7 +99,7 @@ export default function EventDetailContainer({ eventId }: Props) {
 
   const updateUserVector = useCallback(
     async (action: EventInteractionHistory['action']) => {
-      if (!user || !event) return;
+      if (!user || !event || !db) return;
 
       const existingInteraction = eventInteractionHistory?.action as
         | EventInteractionHistory['action']
@@ -147,6 +152,7 @@ export default function EventDetailContainer({ eventId }: Props) {
     [
       user,
       event,
+      db,
       eventInteractionHistory?.action,
       eventInteractionHistory?.createdAt,
     ]
@@ -184,7 +190,7 @@ export default function EventDetailContainer({ eventId }: Props) {
   ]);
 
   const handleGoingClick = async () => {
-    if (!user || !event || isProcessing) return;
+    if (!user || !event || isProcessing || !db) return;
 
     try {
       setIsProcessing(true);
@@ -206,7 +212,7 @@ export default function EventDetailContainer({ eventId }: Props) {
   };
 
   const handlePlanningGeneration = async () => {
-    if (!event || !user) return;
+    if (!event || !user || !db) return;
 
     try {
       setIsPlanningLoading(true);
