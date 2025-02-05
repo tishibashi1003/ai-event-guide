@@ -23,6 +23,7 @@ import {
 import { db } from '@/utils/firebase/config';
 import { generateUserProfileVector } from '@/features/routes/preferences/utils/vector';
 import { EventInteractionHistory, User } from '@/types/firestoreDocument';
+import { Loader2 } from 'lucide-react';
 
 export default function SearchContainer() {
   const { user } = useAuth();
@@ -44,6 +45,9 @@ export default function SearchContainer() {
     endTimestamp: Timestamp.now(),
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingEventId, setProcessingEventId] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     // 日付範囲の設定（今日から7日後まで）
@@ -214,6 +218,7 @@ export default function SearchContainer() {
 
     try {
       setIsProcessing(true);
+      setProcessingEventId(event.id);
 
       const eventHistoryRef = doc(
         db,
@@ -278,6 +283,7 @@ export default function SearchContainer() {
       console.error('イベントクリックの記録中にエラーが発生しました:', error);
     } finally {
       setIsProcessing(false);
+      setProcessingEventId(null);
     }
   };
 
@@ -327,20 +333,26 @@ export default function SearchContainer() {
         ) : events.length > 0 ? (
           <div className='h-full px-4 pb-4 overflow-y-auto'>
             {events.map((event) => (
-              <VerticalCard
-                key={event.id}
-                event={event}
-                onClick={() => handleEventClick(event)}
-                isRecommended={
-                  activeTab === 'recommended'
-                    ? recommendedEvents.some(
-                        (recEvent) => recEvent.id === event.id
-                      )
-                    : allRecommendedEvents.some(
-                        (recEvent) => recEvent.id === event.id
-                      )
-                }
-              />
+              <div key={event.id} className='relative mb-4'>
+                <VerticalCard
+                  event={event}
+                  onClick={() => handleEventClick(event)}
+                  isRecommended={
+                    activeTab === 'recommended'
+                      ? recommendedEvents.some(
+                          (recEvent) => recEvent.id === event.id
+                        )
+                      : allRecommendedEvents.some(
+                          (recEvent) => recEvent.id === event.id
+                        )
+                  }
+                />
+                {isProcessing && processingEventId === event.id && (
+                  <div className='absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-50 top-0 left-0'>
+                    <Loader2 className='w-6 h-6 text-gray-400 animate-spin' />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         ) : (
