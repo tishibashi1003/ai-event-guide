@@ -55,6 +55,7 @@ export default function EventDetailContainer({ eventId }: Props) {
   const {
     data: eventInteractionHistory,
     isLoading: isEventInteractionHistoryLoading,
+    mutate: mutateEventInteractionHistory,
   } = useFirestoreDoc<EventInteractionHistory>(
     `users/${user?.uid}/eventInteractionHistories/${eventId}`
   );
@@ -140,13 +141,7 @@ export default function EventDetailContainer({ eventId }: Props) {
 
       await setDoc(doc(db, `users/${user.uid}`), newUserDoc, { merge: true });
     },
-    [
-      user,
-      event,
-      db,
-      eventInteractionHistory?.action,
-      eventInteractionHistory?.createdAt,
-    ]
+    [user, event, db, eventInteractionHistory]
   );
 
   useEffect(() => {
@@ -161,15 +156,14 @@ export default function EventDetailContainer({ eventId }: Props) {
       return;
     }
 
-    const recordView = async () => {
+    if (!eventInteractionHistory && !isEventInteractionHistoryLoading) {
       try {
-        await updateUserVector('view');
+        updateUserVector('view');
       } catch (error) {
         console.error('閲覧履歴の記録中にエラーが発生しました:', error);
       }
-    };
-
-    recordView();
+      return;
+    }
   }, [
     user,
     event,
@@ -186,6 +180,8 @@ export default function EventDetailContainer({ eventId }: Props) {
     try {
       setIsProcessing(true);
       await updateUserVector('kokoiku');
+      // 状態を即座に更新
+      await mutateEventInteractionHistory();
       toast({
         title: 'ここいくに保存しました',
         description: 'マイページのここいくリストから確認できます',

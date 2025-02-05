@@ -87,7 +87,7 @@ const collectionFetcher = async <T>(queryRef: CollectionReference<DocumentData> 
 
 // 単一ドキュメントを取得するためのフック
 export function useFirestoreDoc<T>(path: string | undefined) {
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     path && !isServer() ? ['doc', path] : null,
     path ? async () => {
       const { db } = getFirebase();
@@ -104,6 +104,7 @@ export function useFirestoreDoc<T>(path: string | undefined) {
     data,
     error,
     isLoading,
+    mutate,
   };
 }
 
