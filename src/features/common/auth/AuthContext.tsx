@@ -17,8 +17,12 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   UserCredential,
+  Auth,
 } from 'firebase/auth';
-import { auth, db } from '@/utils/firebase/config';
+import {
+  auth as firebaseAuth,
+  db as firebaseDb,
+} from '@/utils/firebase/config';
 import {
   deleteDoc,
   doc,
@@ -26,6 +30,7 @@ import {
   getDocs,
   setDoc,
   getDoc,
+  Firestore,
 } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
@@ -45,24 +50,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Firebase インスタンスの取得
+  const auth = firebaseAuth as Auth;
+  const db = firebaseDb as Firestore;
+
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   const signIn = async (email: string, password: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const signUp = async (email: string, password: string) => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     await createUserWithEmailAndPassword(auth, email, password);
   };
 
   const signInWithGoogle = async (): Promise<UserCredential> => {
+    if (!auth || !db) throw new Error('Firebase is not initialized');
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
@@ -92,11 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!auth) throw new Error('Firebase Auth is not initialized');
     await firebaseSignOut(auth);
   };
 
   const deleteAccount = async () => {
-    if (!user) return;
+    if (!user || !db || !auth) throw new Error('Firebase is not initialized');
     try {
       // ユーザーのイベントインタラクション履歴を削除
       const interactionsRef = collection(

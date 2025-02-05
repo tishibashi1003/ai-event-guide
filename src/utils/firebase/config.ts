@@ -1,9 +1,9 @@
 'use client';
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
+import { initializeFirestore, Firestore } from 'firebase/firestore';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, AppCheck } from 'firebase/app-check';
 
 // Firebase設定
 const firebaseConfig = {
@@ -17,10 +17,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (クライアントサイドのみ)
-let app;
-let auth;
-let db;
-let appCheck;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let appCheck: AppCheck | undefined;
 
 if (typeof window !== 'undefined') {
   app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
