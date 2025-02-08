@@ -58,6 +58,12 @@ exports.scheduledGetEventFunction = onSchedule({
     const weekendDates = getWeekendDates();
 
     for (const targetDate of weekendDates) {
+      const savedTargetDateEventList = await db.collection("events")
+        .where("eventDate", "==", Timestamp.fromDate(targetDate))
+        .get();
+
+      console.log("savedTargetDateEventList", JSON.stringify(savedTargetDateEventList.docs.map(doc => doc.data()), null, 2));
+
       for (const genre of ["ショッピングモール", "住宅展示場", "スポーツ", "祭り", ""]) {
         try {
           const prefectureEvents = await eventSearchPrompt(genkitInstance, {
@@ -69,26 +75,21 @@ exports.scheduledGetEventFunction = onSchedule({
           });
           const parsedEventResult = OutputEventSchema.array().parse(prefectureEvents.output);
 
-          const savedTargetDateEventList = await db.collection("events")
-            .where("eventDate", "==", convertYYYYMMDDToTimestamp(targetDate.toISOString()))
-            .get();
-
-          console.log("savedTargetDateEventList", JSON.stringify(savedTargetDateEventList.docs.map(doc => doc.data()), null, 2));
 
           // イベントを個別に保存
           for (const event of parsedEventResult) {
 
             console.log("event", JSON.stringify(event, null, 2));
 
-            const isDuplicateResult = await checkDuplicateEvent({
+            const isDuplicateResult = await checkDuplicateEvent(genkitInstance, {
               target: event,
               eventList: savedTargetDateEventList.docs.map(doc => doc.data() as Event),
             });
             console.log("重複チェック結果:", isDuplicateResult);
+            await sleep(10000);
 
             // @ts-expect-error 型定義がない
             if (isDuplicateResult.isDuplicate) {
-              // @ts-expect-error 型定義がない
               console.log(isDuplicateResult.message);
               continue;
             }
@@ -141,6 +142,7 @@ exports.scheduledGetEventFunction = onSchedule({
             targetDate: Timestamp.fromDate(targetDate),
             error: error instanceof Error ? error.message : "Unknown error",
           });
+          await sleep(30000);
         }
       }
     }
