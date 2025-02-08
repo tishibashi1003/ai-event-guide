@@ -1,11 +1,6 @@
 # 「ココいく」Getting Started
 
-## 必要要件
-
-- Node.js v20.0.0 以上
-- yarn 1.22.19 以上
-- Firebase CLI ツール
-- Google Cloud CLI ツール
+ローカルで動作検証する必要がある場合には以下の手順で環境構築を行ってください。
 
 ## 環境構築
 
@@ -38,6 +33,9 @@ cp .env.example .env.local
 本番環境で実行する際は Secret Manager へ環境変数を設定してください。
 
 ```env
+GOOGLE_CLOUD_PROJECT_ID=your_google_cloud_project_id
+
+# https://firebase.google.com/?hl=ja
 NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
@@ -46,9 +44,11 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=your_measurement_id
 
+# https://aistudio.google.com/app/apikey
 GOOGLE_GENAI_API_KEY=your_google_genai_api_key
-GOOGLE_CLOUD_PROJECT_ID=your_google_cloud_project_id
-GOOGLE_CLOUD_WORKFLOWS_PROJECT_ID=your_google_cloud_workflows_project_id
+
+# https://openrouter.ai/
+OPENROUTER_API_KEY=your_openrouter_api_key
 ```
 
 4. Firebase プロジェクトの設定
