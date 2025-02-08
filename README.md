@@ -10,6 +10,8 @@ https://zenn-hackathon-b8dca.web.app/
 
 ### 動作確認事項一覧
 
+- [ログインページ](https://zenn-hackathon-b8dca.web.app/)
+  - Google ログインで登録
 - [イベント一覧ページ](https://zenn-hackathon-b8dca.web.app/search)
   - イベントが表示
   - タブで「今週/今後」を切り替え
