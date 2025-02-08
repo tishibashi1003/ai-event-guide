@@ -18,6 +18,8 @@ import { getFirebase } from '@/utils/firebase/config';
 
 export function PreferencesContainer() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedRegion, setSelectedRegion] = useState<string>('岐阜県');
+  const [hasSelectedRegion, setHasSelectedRegion] = useState(false);
   const [interactionHistory, setInteractionHistory] = useState<
     EventInteractionHistory[]
   >([]);
@@ -26,6 +28,11 @@ export function PreferencesContainer() {
 
   // Firestore インスタンスの取得
   const { db } = getFirebase();
+
+  const handleRegionSelect = () => {
+    if (!selectedRegion) return;
+    setHasSelectedRegion(true);
+  };
 
   const {
     data: events,
@@ -109,6 +116,50 @@ export function PreferencesContainer() {
       <div className='flex flex-col items-center justify-center h-full'>
         <p>エラーが発生しました。</p>
         <p>{error.message}</p>
+      </div>
+    );
+  }
+
+  if (!hasSelectedRegion) {
+    return (
+      <div className='flex flex-col items-center justify-center min-h-screen p-4 pt-0 pb-24'>
+        <div className='w-full max-w-sm space-y-8'>
+          <div className='text-center'>
+            <h2 className='text-2xl font-bold text-gray-900'>
+              お住まいの地域を
+              <br />
+              教えてください
+            </h2>
+            <p className='mt-2 text-sm text-gray-600'>
+              あなたの地域に合わせたイベントをご紹介します
+            </p>
+          </div>
+
+          <div className='space-y-4'>
+            <div className='space-y-2'>
+              <select
+                value={selectedRegion}
+                onChange={(e) => setSelectedRegion(e.target.value)}
+                disabled
+                className='w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent bg-gray-50 cursor-not-allowed'
+              >
+                <option value='岐阜県'>岐阜県</option>
+                <option value='愛知県'>愛知県</option>
+                <option value='三重県'>三重県</option>
+              </select>
+              <p className='text-xs text-gray-500 text-center'>
+                ※ 現在はデモ版のため岐阜県以外の設定ができません
+              </p>
+            </div>
+
+            <button
+              onClick={handleRegionSelect}
+              className='w-full py-3 px-4 rounded-full text-base font-medium transition-all duration-300 bg-gradient-to-r from-[#FFD700] to-[#FFA500] text-white hover:opacity-90'
+            >
+              次へ
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
