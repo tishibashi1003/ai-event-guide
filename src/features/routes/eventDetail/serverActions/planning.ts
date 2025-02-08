@@ -7,7 +7,7 @@ const location = 'asia-northeast1'; // 例: 'us-central1'
 const projectId = 'zenn-hackathon-b8dca';
 
 // ワークフローの名前
-const workflowName = 'test';
+const workflowName = 'ai-planning';
 
 interface WorkflowParams {
   eventLocation: string;

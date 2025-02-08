@@ -450,7 +450,7 @@ export default function EventDetailContainer({ eventId }: Props) {
                           )}
                         </button>
                         <p className='mt-3 text-xs text-gray-500'>
-                          ※ プランの生成には20秒ほどかかります <br /> ※
+                          ※ プランの生成には30秒ほどかかります <br /> ※
                           プランの生成は1イベントにつき1度だけです
                         </p>
                       </>
