@@ -7,7 +7,7 @@ export const Footer = ({ className }: FooterProps) => {
     <footer
       className={`container mx-auto px-4 py-8 text-center text-gray-600 border-t ${className}`}
     >
-      <p>© 2024 ココいく All rights reserved.</p>
+      <p>© 2025 ココいく All rights reserved.</p>
     </footer>
   );
 };

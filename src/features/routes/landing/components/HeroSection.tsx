@@ -37,10 +37,12 @@ export const HeroSection = ({ className }: HeroSectionProps) => {
       <div className='container relative z-10 px-4 py-20 mx-auto'>
         <div className='max-w-3xl mx-auto text-center'>
           <h1 className='mb-6 text-4xl font-bold text-gray-900 md:text-6xl'>
-            週末をもっと楽しく、もっとワクワクに
+            週末をもっと楽しく
+            <br />
+            もっとワクワクに
           </h1>
           <p className='mb-12 text-xl text-gray-600 md:text-2xl'>
-            家族みんなの「好き」から、素敵な週末のお出かけ先を見つけよう
+            家族みんなの「好き」から、ステキな週末のお出かけ先を見つけよう
           </p>
           <Button
             size='lg'
