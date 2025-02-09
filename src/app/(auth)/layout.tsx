@@ -6,7 +6,7 @@ import { Toaster } from '@/components/ui/toast/toaster';
 
 export const metadata = {
   title: 'ココいく',
-  description: 'イベント検索アプリ',
+  description: 'おでかけプランニング AI エージェント',
 };
 
 export default function RootLayout({

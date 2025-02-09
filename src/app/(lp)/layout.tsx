@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'ココいく',
-  description: 'イベント検索アプリ',
+  description: 'おでかけプランニング AI エージェント',
 };
 
 export default function RootLayout({
