@@ -18,6 +18,8 @@ import {
   signInWithPopup,
   UserCredential,
   Auth,
+  signInAnonymously,
+  linkWithPopup,
 } from 'firebase/auth';
 import {
   auth as firebaseAuth,
@@ -42,6 +44,8 @@ type AuthContextType = {
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
   signInWithGoogle: () => Promise<UserCredential>;
+  signInAnonymously: () => Promise<UserCredential>;
+  linkAnonymousWithGoogle: () => Promise<UserCredential>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -105,6 +109,62 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInAnonymouslyHandler = async (): Promise<UserCredential> => {
+    if (!auth || !db) throw new Error('Firebase is not initialized');
+    try {
+      const result = await signInAnonymously(auth);
+
+      // ユーザードキュメントの作成
+      const userDocRef = doc(db, 'users', result.user.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (!userDoc.exists()) {
+        await setDoc(
+          userDocRef,
+          {
+            uid: result.user.uid,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            isAnonymous: true,
+          },
+          { merge: true }
+        );
+      }
+      router.push('/preferences');
+      return result;
+    } catch (error) {
+      console.error('匿名ログイン中にエラーが発生しました:', error);
+      throw error;
+    }
+  };
+
+  const linkAnonymousWithGoogle = async (): Promise<UserCredential> => {
+    if (!auth || !db || !user)
+      throw new Error('Firebase is not initialized or user not logged in');
+    if (!user.isAnonymous) throw new Error('Current user is not anonymous');
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await linkWithPopup(user, provider);
+
+      // ユーザードキュメントの更新
+      const userDocRef = doc(db, 'users', result.user.uid);
+      await setDoc(
+        userDocRef,
+        {
+          uid: result.user.uid,
+          updatedAt: new Date(),
+          isAnonymous: false,
+        },
+        { merge: true }
+      );
+
+      return result;
+    } catch (error) {
+      console.error('Googleアカウントとの連携中にエラーが発生しました:', error);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     if (!auth) throw new Error('Firebase Auth is not initialized');
     await firebaseSignOut(auth);
@@ -146,6 +206,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signOut,
         deleteAccount,
         signInWithGoogle,
+        signInAnonymously: signInAnonymouslyHandler,
+        linkAnonymousWithGoogle,
       }}
     >
       {children}

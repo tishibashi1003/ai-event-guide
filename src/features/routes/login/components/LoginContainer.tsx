@@ -14,10 +14,11 @@ import { getFirebase } from '@/utils/firebase/config';
 import { useEffect, useState } from 'react';
 
 export const LoginContainer = () => {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, signInAnonymously } = useAuth();
   const router = useRouter();
   const { add } = useFirestoreCollectionUpdate('users');
   const [isClient, setIsClient] = useState(false);
+  const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -44,6 +45,7 @@ export const LoginContainer = () => {
             uid: result.user.uid,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now(),
+            isAnonymous: false,
           };
 
           await add<User>(userData, result.user.uid);
@@ -53,6 +55,43 @@ export const LoginContainer = () => {
       }
     } catch (error) {
       console.error('❌ Login error:', error);
+    }
+  };
+
+  const handleAnonymousLogin = async () => {
+    try {
+      setIsAnonymousLoading(true);
+      const result = await signInAnonymously();
+      const { db } = getFirebase();
+
+      if (!db) {
+        console.error('Firestore is not initialized');
+        return;
+      }
+
+      if (result?.user) {
+        // ユーザードキュメントの存在確認
+        const userDocRef = doc(db, 'users', result.user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        // ドキュメントが存在しない場合のみ作成
+        if (!userDocSnap.exists()) {
+          const userData: User = {
+            uid: result.user.uid,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now(),
+            isAnonymous: true,
+          };
+
+          await add<User>(userData, result.user.uid);
+        }
+
+        router.push('/search');
+      }
+    } catch (error) {
+      console.error('❌ Anonymous login error:', error);
+    } finally {
+      setIsAnonymousLoading(false);
     }
   };
 
@@ -100,6 +139,48 @@ export const LoginContainer = () => {
               />
             </svg>
             Googleでログイン / 会員登録
+          </Button>
+          <div className='relative mb-4'>
+            <div className='absolute inset-0 flex items-center'>
+              <div className='w-full border-t border-gray-300'></div>
+            </div>
+            <div className='relative flex justify-center text-sm'>
+              <span className='px-2 text-gray-500 bg-white'>または</span>
+            </div>
+          </div>
+          <Button
+            variant='outline'
+            className='w-full mb-4'
+            onClick={handleAnonymousLogin}
+            disabled={isAnonymousLoading}
+          >
+            {isAnonymousLoading ? (
+              <>
+                <svg
+                  className='w-4 h-4 mr-2 animate-spin'
+                  xmlns='http://www.w3.org/2000/svg'
+                  fill='none'
+                  viewBox='0 0 24 24'
+                >
+                  <circle
+                    className='opacity-25'
+                    cx='12'
+                    cy='12'
+                    r='10'
+                    stroke='currentColor'
+                    strokeWidth='4'
+                  ></circle>
+                  <path
+                    className='opacity-75'
+                    fill='currentColor'
+                    d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                  ></path>
+                </svg>
+                ログイン中...
+              </>
+            ) : (
+              'ゲストとして利用する'
+            )}
           </Button>
           <div className='mt-2 text-center'>
             <Link

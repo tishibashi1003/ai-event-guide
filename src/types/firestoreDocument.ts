@@ -26,7 +26,8 @@ export const UserSchema = z.object({
   uid: z.string(),
   preferenceVector: z.array(z.number()).optional(),
   createdAt: z.instanceof(Timestamp),
-  updatedAt: z.instanceof(Timestamp)
+  updatedAt: z.instanceof(Timestamp),
+  isAnonymous: z.boolean().optional(),
 });
 
 export const EventInteractionHistorySchema = z.object({
