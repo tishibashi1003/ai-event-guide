@@ -2,16 +2,16 @@
 
 ## サービスページ
 
-以下から Google ログインで登録することで利用できます。
+以下から Google ログイン、もしくはゲストユーザーで登録することで利用できます。
 
 https://zenn-hackathon-b8dca.web.app/
 
-※ 認証関連の情報は Firebase Authentication でのみ管理しており、メールアドレスや電話番号などの個人情報は DB には保存しておりませんのでご安心ください。
+※ 認証関連の情報は Firebase Authentication でのみ管理しており、メールアドレスや電話番号などの個人情報は DB には保存しておりません。
 
 ### 動作確認事項一覧
 
 - [ログインページ](https://zenn-hackathon-b8dca.web.app/)
-  - Google ログインで登録
+  - Google ログインもしくはゲストユーザーでログイン
 - [イベント一覧ページ](https://zenn-hackathon-b8dca.web.app/search)
   - イベントが表示
   - タブで「今週/今後」を切り替え
