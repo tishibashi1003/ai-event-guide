@@ -13,7 +13,7 @@ import { checkDuplicateEvent } from "./prompts/checkDeplicate";
 initializeApp();
 
 exports.scheduledGetEventFunction = onSchedule({
-  schedule: "0 0 * * *",
+  schedule: "0 0 * * 1",
   region: "asia-northeast1",
   secrets: ['GOOGLE_GENAI_API_KEY', 'OPENROUTER_API_KEY'],
   timeoutSeconds: 1800,
