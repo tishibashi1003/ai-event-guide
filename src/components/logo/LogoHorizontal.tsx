@@ -74,7 +74,7 @@ const LogoHorizontal: React.FC<LogoHorizontalProps> = ({
         fill='#FFD700'
         letterSpacing='0.05em'
       >
-        ココいく
+        ココいこ
       </text>
     </svg>
   );

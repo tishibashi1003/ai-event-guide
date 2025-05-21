@@ -51,7 +51,7 @@ export default function KokoikuContainer() {
     return (
       <div className='flex flex-col min-h-screen bg-white'>
         <header className='flex items-center justify-between p-4 border-b border-gray-100'>
-          <h1 className='text-2xl font-bold text-gray-700'>ココいくリスト</h1>
+          <h1 className='text-2xl font-bold text-gray-700'>ココいこリスト</h1>
         </header>
         <main className='flex-1 p-4'>
           <div className='flex items-center justify-center h-full'>
@@ -69,7 +69,7 @@ export default function KokoikuContainer() {
           <p>
             {showPastEvents
               ? '過去のイベントはありません'
-              : 'まだココいくリストに登録されたイベントがありません'}
+              : 'まだココいこリストに登録されたイベントがありません'}
           </p>
         </div>
       );
@@ -114,7 +114,7 @@ export default function KokoikuContainer() {
   return (
     <div className='flex flex-col min-h-screen bg-white'>
       <header className='flex items-center justify-between p-4 border-b border-gray-100'>
-        <h1 className='text-2xl font-bold text-gray-700'>ココいくリスト</h1>
+        <h1 className='text-2xl font-bold text-gray-700'>ココいこリスト</h1>
         <button
           onClick={() => setShowPastEvents(!showPastEvents)}
           className={cn(
