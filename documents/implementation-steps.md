@@ -377,7 +377,7 @@ export class GeminiService {
     const weight = (() => {
       switch (action) {
         case 'save':
-          return 0.3; // 「ココいく！」は強い正の影響
+          return 0.3; // 「ココいこ！」は強い正の影響
         case 'like':
           return 0.2; // 「いいね」は中程度の正の影響
         case 'dislike':
@@ -430,7 +430,7 @@ export class UserPreferenceVectorManager {
     const weight = (() => {
       switch (interactionType) {
         case 'save':
-          return 0.3; // 「ココいく！」は強い正の影響
+          return 0.3; // 「ココいこ！」は強い正の影響
         case 'like':
           return 0.2; // 「いいね」は中程度の正の影響
         case 'dislike':
